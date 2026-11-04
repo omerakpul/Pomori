@@ -3,11 +3,11 @@
 Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı bir commit olacak şekilde tasarlandı. Bir adımı bitirmeden sonrakine geçmeyin.
 
 ## Hafta 0: Hazırlık (1 gün)
-- [ ] GitHub reposu oluştur, `README.md` iskeleti ve `.gitignore` ekle
-- [ ] Android Studio'da yeni proje: Empty Activity (Compose), min SDK 26, Kotlin DSL
-- [ ] Version catalog (`libs.versions.toml`) ile bağımlılıkları tanımla: Compose BOM, Hilt, Room, DataStore, Navigation, Coroutines, test kütüphaneleri
-- [ ] Hilt'i kur, `@HiltAndroidApp` Application sınıfını ekle
-- [ ] GitHub Actions: `./gradlew test` ve `assembleDebug` çalıştıran temel CI
+- [x] GitHub reposu oluştur, `README.md` iskeleti ve `.gitignore` ekle
+- [x] Android Studio'da yeni proje: Empty Activity (Compose), min SDK 26, Kotlin DSL
+- [x] Version catalog (`libs.versions.toml`) ile bağımlılıkları tanımla: Compose BOM, Hilt, Room, DataStore, Navigation, Coroutines, test kütüphaneleri
+- [x] Hilt'i kur, `@HiltAndroidApp` Application sınıfını ekle
+- [x] GitHub Actions: `./gradlew test` ve `assembleDebug` çalıştıran temel CI
 
 ## Hafta 1: Sayaç ve foreground service
 **Hedef:** Seans başlat/iptal et, kalan süre doğru göster, süreç ölse bile bozulmasın.
