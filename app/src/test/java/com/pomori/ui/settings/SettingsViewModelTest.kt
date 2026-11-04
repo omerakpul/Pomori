@@ -2,10 +2,14 @@ package com.pomori.ui.settings
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.InstalledApp
+import com.pomori.domain.usecase.CleanupOldNotifications
+import com.pomori.testutil.FakeClock
 import com.pomori.testutil.FakeExceptionRepository
 import com.pomori.testutil.FakeInstalledApps
+import com.pomori.testutil.FakeNotificationRepository
 import com.pomori.testutil.FakeSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,8 +26,12 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
+    private val day = 24 * 60 * 60 * 1000L
+    private val now = 100 * day
     private val settings = FakeSettingsStore()
     private val exceptions = FakeExceptionRepository()
+    private val notifications = FakeNotificationRepository()
+    private val clock = FakeClock(nowMs = now)
     private val apps = FakeInstalledApps(
         listOf(
             InstalledApp("com.google.android.gm", "Gmail"),
@@ -41,18 +49,32 @@ class SettingsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = SettingsViewModel(settings, exceptions, apps)
+    private fun viewModel(store: FakeSettingsStore = settings) = SettingsViewModel(
+        store,
+        exceptions,
+        CleanupOldNotifications(store, notifications, clock),
+        apps,
+    )
+
+    private suspend fun notificationAgo(days: Long) {
+        notifications.insert(
+            CapturedNotification(
+                sessionId = 1,
+                packageName = "com.whatsapp",
+                appLabel = "WhatsApp",
+                title = null,
+                text = null,
+                postedAt = now - days * day,
+            ),
+        )
+    }
 
     /** Yüklenen uygulamalar ve ilk ayarlar gelene kadar bekleyip son durumu verir. */
     private suspend fun ReceiveTurbine<SettingsUiState>.latest(): SettingsUiState = expectMostRecentItem()
 
     @Test
     fun `starts with the stored settings`() = runTest {
-        val vm = SettingsViewModel(
-            FakeSettingsStore(focusMinutes = 40, breakMinutes = 8, retentionDays = 14),
-            exceptions,
-            apps,
-        )
+        val vm = viewModel(FakeSettingsStore(focusMinutes = 40, breakMinutes = 8, retentionDays = 14))
         vm.uiState.test {
             val state = latest()
             assertEquals(40, state.focusMinutes)
@@ -208,6 +230,54 @@ class SettingsViewModelTest {
             vm.addSender("Ali")
 
             assertEquals(listOf("Zeynep", "WhatsApp", "Ali"), latest().rules.map { it.displayName })
+        }
+    }
+
+    // --- saklama süresi değişince hemen temizlik ---
+
+    @Test
+    fun `shortening the retention period deletes the notifications that fall outside it`() = runTest {
+        notificationAgo(days = 2)
+        notificationAgo(days = 5)
+        notificationAgo(days = 6)
+        val vm = viewModel()
+        vm.uiState.test {
+            latest()
+
+            vm.setRetentionDays(3)
+
+            // Yalnızca 3 günden eski olanlar silinir.
+            assertEquals(1, notifications.rows.size)
+            assertEquals(3, latest().retentionDays)
+        }
+    }
+
+    @Test
+    fun `lengthening the retention period deletes nothing`() = runTest {
+        notificationAgo(days = 2)
+        notificationAgo(days = 6)
+        val vm = viewModel()
+        vm.uiState.test {
+            latest()
+
+            vm.setRetentionDays(30)
+
+            assertEquals(30, latest().retentionDays)
+            assertEquals(2, notifications.rows.size)
+        }
+    }
+
+    @Test
+    fun `the new value is what the cleanup uses even for out of range input`() = runTest {
+        notificationAgo(days = 2)
+        val vm = viewModel()
+        vm.uiState.test {
+            latest()
+
+            vm.setRetentionDays(0) // depo 1 güne çeker
+
+            assertEquals(0, notifications.rows.size)
+            assertEquals(1, latest().retentionDays)
         }
     }
 }

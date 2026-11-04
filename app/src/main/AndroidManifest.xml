@@ -49,6 +49,21 @@
                 android:value="Pomodoro focus timer: keeps the countdown alive and shows the remaining session time in an ongoing notification while the user focuses." />
         </service>
 
+        <!--
+            WorkManager'ı Hilt'in worker fabrikasıyla PomoriApp başlatır (Configuration.Provider);
+            varsayılan başlatıcı kapatılır, yoksa fabrika devreye girmez.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <!-- Seans sırasında bildirimleri yakalar. Kullanıcı erişimi sistem ayarlarından kendisi açar. -->
         <service
             android:name=".platform.notification.FocusNotificationListener"

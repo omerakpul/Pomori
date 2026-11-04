@@ -8,6 +8,9 @@ interface NotificationRepository {
     /** Bildirimi kaydeder, üretilen id'yi döner. Seans yoksa kayıt reddedilir (yabancı anahtar). */
     suspend fun insert(notification: CapturedNotification): Long
 
+    /** `olderThan`'dan (epoch ms) kesin olarak eski bildirimleri siler, silinen sayıyı döner. */
+    suspend fun deleteOlderThan(olderThan: Long): Int
+
     /** Seansın bildirimlerini en yeniden eskiye sıralı verir ve yeni kayıtlarda güncellenir. */
     fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>>
 

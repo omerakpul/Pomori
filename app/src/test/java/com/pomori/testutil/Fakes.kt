@@ -143,6 +143,12 @@ class FakeNotificationRepository : NotificationRepository {
     override fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>> =
         state.map { all -> all.filter { it.sessionId == sessionId }.sortedByDescending { it.postedAt } }
 
+    override suspend fun deleteOlderThan(olderThan: Long): Int {
+        val before = state.value.size
+        state.value = state.value.filter { it.postedAt >= olderThan }
+        return before - state.value.size
+    }
+
     // Gerçek sorguyla aynı: sayı azalan, sonra etiket (harf duyarsız), sonra paket; etiket en yeni satırdan.
     override fun observeTopDistractors(from: Long, limit: Int): Flow<List<Distractor>> =
         state.map { all ->

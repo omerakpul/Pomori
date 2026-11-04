@@ -10,6 +10,10 @@ interface NotificationDao {
     @Insert
     suspend fun insert(notification: CapturedNotificationEntity): Long
 
+    /** `olderThan`'dan (epoch ms) kesin olarak eski bildirimleri siler, silinen sayıyı döner. */
+    @Query("DELETE FROM captured_notifications WHERE postedAt < :olderThan")
+    suspend fun deleteOlderThan(olderThan: Long): Int
+
     /** Aynı `postedAt` değerinde sıra `id` ile belirlenir, böylece sonuç her zaman aynı kalır. */
     @Query(
         """

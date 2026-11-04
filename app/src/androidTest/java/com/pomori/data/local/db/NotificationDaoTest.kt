@@ -122,4 +122,57 @@ class NotificationDaoTest {
         assertTrue(notifications.observeBySession(deleted).first().isEmpty())
         assertEquals(1, notifications.observeBySession(kept).first().size)
     }
+
+    // --- deleteOlderThan ---
+
+    @Test
+    fun deleteOlderThan_removesOnlyStrictlyOlderRows() = runBlocking {
+        val session = newSession()
+        notifications.insert(notification(session, postedAt = 99, title = "eski"))
+        notifications.insert(notification(session, postedAt = 100, title = "sınırda"))
+        notifications.insert(notification(session, postedAt = 101, title = "yeni"))
+
+        val deleted = notifications.deleteOlderThan(100)
+
+        assertEquals(1, deleted)
+        assertEquals(
+            listOf("yeni", "sınırda"),
+            notifications.observeBySession(session).first().map { it.title },
+        )
+    }
+
+    @Test
+    fun deleteOlderThan_worksAcrossSessions() = runBlocking {
+        val first = newSession()
+        val second = newSession()
+        notifications.insert(notification(first, postedAt = 10))
+        notifications.insert(notification(second, postedAt = 20))
+        notifications.insert(notification(second, postedAt = 500))
+
+        val deleted = notifications.deleteOlderThan(100)
+
+        assertEquals(2, deleted)
+        assertTrue(notifications.observeBySession(first).first().isEmpty())
+        assertEquals(1, notifications.observeBySession(second).first().size)
+    }
+
+    @Test
+    fun deleteOlderThan_returnsZeroWhenNothingMatches() = runBlocking {
+        val session = newSession()
+        notifications.insert(notification(session, postedAt = 500))
+
+        assertEquals(0, notifications.deleteOlderThan(100))
+        assertEquals(1, notifications.observeBySession(session).first().size)
+    }
+
+    @Test
+    fun deleteOlderThan_doesNotTouchSessions() = runBlocking {
+        val session = newSession()
+        notifications.insert(notification(session, postedAt = 10))
+
+        notifications.deleteOlderThan(100)
+
+        // Seans kaydı kalır: istatistikler bildirimler silinse de tamamlanan seansları sayar.
+        assertEquals(session, sessions.getById(session)?.id)
+    }
 }

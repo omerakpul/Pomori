@@ -7,6 +7,7 @@ import com.pomori.domain.model.InstalledApp
 import com.pomori.domain.repository.ExceptionRepository
 import com.pomori.domain.repository.InstalledApps
 import com.pomori.domain.repository.SettingsStore
+import com.pomori.domain.usecase.CleanupOldNotifications
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val exceptions: ExceptionRepository,
+    private val cleanupOldNotifications: CleanupOldNotifications,
     installedApps: InstalledApps,
 ) : ViewModel() {
 
@@ -53,7 +55,11 @@ class SettingsViewModel @Inject constructor(
 
     fun setBreakMinutes(minutes: Int) = launch { settings.setBreakMinutes(minutes) }
 
-    fun setRetentionDays(days: Int) = launch { settings.setRetentionDays(days) }
+    // Süre kısaltıldığında kullanıcı bildirimlerin silinmesini bekler: günlük işi beklemeden hemen temizle.
+    fun setRetentionDays(days: Int) = launch {
+        settings.setRetentionDays(days)
+        cleanupOldNotifications()
+    }
 
     fun addSender(name: String) = launch { exceptions.add(ExceptionRule.Sender(name)) }
 

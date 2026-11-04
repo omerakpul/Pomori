@@ -114,6 +114,18 @@ class NotificationRepositoryImplTest {
     }
 
     @Test
+    fun `deleting old notifications passes the cutoff and returns the deleted count`() = runTest {
+        repository.insert(notification(postedAt = 100))
+        repository.insert(notification(postedAt = 200))
+        repository.insert(notification(postedAt = 300))
+
+        val deleted = repository.deleteOlderThan(250)
+
+        assertEquals(2, deleted)
+        assertEquals(250L, dao.lastDeleteCutoff)
+    }
+
+    @Test
     fun `top distractors pass the window and the limit to the query`() = runTest {
         repository.observeTopDistractors(from = 1234, limit = 3).test { awaitItem() }
 
@@ -125,6 +137,15 @@ class NotificationRepositoryImplTest {
         val distractorRows = MutableStateFlow<List<DistractorRow>>(emptyList())
         var lastDistractorQuery: Pair<Long, Int>? = null
         val rows: List<CapturedNotificationEntity> get() = state.value
+
+        var lastDeleteCutoff: Long? = null
+
+        override suspend fun deleteOlderThan(olderThan: Long): Int {
+            lastDeleteCutoff = olderThan
+            val before = state.value.size
+            state.value = state.value.filter { it.postedAt >= olderThan }
+            return before - state.value.size
+        }
 
         override suspend fun insert(notification: CapturedNotificationEntity): Long {
             val id = rows.size + 1L

@@ -16,6 +16,8 @@ class NotificationRepositoryImpl @Inject constructor(
     override suspend fun insert(notification: CapturedNotification): Long =
         dao.insert(notification.toEntity())
 
+    override suspend fun deleteOlderThan(olderThan: Long): Int = dao.deleteOlderThan(olderThan)
+
     override fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>> =
         dao.observeBySession(sessionId).map { rows -> rows.map { it.toDomain() } }
 

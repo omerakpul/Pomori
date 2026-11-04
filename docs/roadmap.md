@@ -48,7 +48,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] Ayarlar ekranı: süreler, istisna listesi (yüklü uygulamalardan seçme), saklama süresi
 - [x] Listener'a istisna kontrolünü bağla
 - [x] `StatsScreen`: haftalık odak süresi, tamamlanan seans, en çok dikkat dağıtan uygulamalar
-- [ ] WorkManager ile eski bildirimleri silme işi (periyodik)
+- [x] WorkManager ile eski bildirimleri silme işi (periyodik)
 - [ ] Compose UI testleri (sayaç ve özet ekranları)
 - [ ] Koyu tema, erişilebilirlik (içerik açıklamaları, yeterli kontrast)
 - [ ] Uygulama ikonu ve adaptive icon
