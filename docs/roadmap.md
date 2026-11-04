@@ -12,17 +12,17 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 ## Hafta 1: Sayaç ve foreground service
 **Hedef:** Seans başlat/iptal et, kalan süre doğru göster, süreç ölse bile bozulmasın.
 
-- [ ] `Clock` arayüzü ve gerçek/sahte uygulaması
-- [ ] `TimerStateMachine` (saf Kotlin) + kapsamlı unit testler
-- [ ] Aktif seans DataStore'u (bitiş zamanı)
-- [ ] `FocusSession` Room varlığı, DAO, repository
-- [ ] `StartSession`, `EndSession` use case'leri
-- [ ] `TimerViewModel` + `TimerUiState` (StateFlow)
-- [ ] `TimerScreen` (Compose): dairesel ilerleme, başlat/iptal düğmeleri
-- [ ] `FocusForegroundService` + kalıcı bildirim (kalan süre)
-- [ ] `POST_NOTIFICATIONS` izin akışı (Android 13+)
+- [x] `Clock` arayüzü ve gerçek/sahte uygulaması
+- [x] `TimerStateMachine` (saf Kotlin) + kapsamlı unit testler
+- [x] Aktif seans DataStore'u (bitiş zamanı)
+- [x] `FocusSession` Room varlığı, DAO, repository
+- [x] `StartSession`, `EndSession` use case'leri
+- [x] `TimerViewModel` + `TimerUiState` (StateFlow)
+- [x] `TimerScreen` (Compose): dairesel ilerleme, başlat/iptal düğmeleri
+- [x] `FocusForegroundService` + kalıcı bildirim (kalan süre)
+- [x] `POST_NOTIFICATIONS` izin akışı (Android 13+)
 - [ ] Manuel test: uygulamayı son uygulamalardan kapat, tekrar aç, süre doğru mu?
-- [ ] Seans bitişinde bildirim/ses
+- [x] Seans bitişinde bildirim/ses
 
 **Bitti sayılır:** Unit testler yeşil, gerçek cihazda süreç öldürme testi geçti.
 
