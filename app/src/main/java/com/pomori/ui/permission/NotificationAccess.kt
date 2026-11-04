@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -75,8 +77,20 @@ fun NotificationAccessCard(
                 text = stringResource(R.string.access_warning_body),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            TextButton(onClick = onOpenSettings, modifier = Modifier.padding(top = 4.dp)) {
-                Text(stringResource(R.string.access_warning_action))
+            TextButton(
+                onClick = onOpenSettings,
+                // Varsayılan `primary` rengi kartın zemininde (tertiaryContainer) bazı dinamik renk
+                // şemalarında neredeyse görünmez (koyu modda 1,12:1 ölçüldü). Kartın kendi içerik rengi
+                // her şemada okunur.
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                ),
+                modifier = Modifier.padding(top = 4.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.access_warning_action),
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

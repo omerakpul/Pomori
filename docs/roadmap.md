@@ -50,7 +50,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] `StatsScreen`: haftalık odak süresi, tamamlanan seans, en çok dikkat dağıtan uygulamalar
 - [x] WorkManager ile eski bildirimleri silme işi (periyodik)
 - [x] Compose UI testleri (sayaç ve özet ekranları)
-- [ ] Koyu tema, erişilebilirlik (içerik açıklamaları, yeterli kontrast)
+- [x] Koyu tema, erişilebilirlik (içerik açıklamaları, yeterli kontrast)
 - [ ] Uygulama ikonu ve adaptive icon
 - [ ] Release APK imzalama ve GitHub Releases'e yükleme
 

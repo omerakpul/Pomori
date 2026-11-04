@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Koyu mod: pencere arka planı ve sistem öğeleri Compose teması gelmeden önce de koyu olur.
+        Açık tema sabit kalsaydı koyu modda açılışta beyaz bir pencere yanıp söner.
+    -->
+    <style name="Theme.Pomori" parent="android:Theme.Material.NoActionBar" />
+</resources>

@@ -1,6 +1,15 @@
 package com.pomori.ui.settings
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
@@ -18,6 +27,7 @@ import com.pomori.ui.pomoriComposeRule
 import com.pomori.ui.str
 import com.pomori.ui.theme.PomoriTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -259,5 +269,45 @@ class SettingsScreenTest {
 
         assertEquals(emptyList<String>(), calls)
         rule.onNodeWithText(rule.str(R.string.settings_pick_app_title)).assertDoesNotExist()
+    }
+
+    // --- erişilebilirlik ---
+
+    @Test
+    fun stepperButtons_haveAtLeast48dpTouchTargets() {
+        show()
+
+        listOf("focus", "break", "retention").forEach { row ->
+            listOf("dec", "inc").forEach { direction ->
+                rule.onNodeWithTag("settings_${row}_$direction")
+                    .assertWidthIsAtLeast(48.dp)
+                    .assertHeightIsAtLeast(48.dp)
+            }
+        }
+    }
+
+    @Test
+    fun stepperValues_stayOnOneLineWithTheLargestFonts() {
+        rule.setContent {
+            val base = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = 2f)) {
+                PomoriTheme {
+                    SettingsScreen(
+                        state = SettingsUiState(focusMinutes = 25),
+                        onFocusMinutesChange = {},
+                        onBreakMinutesChange = {},
+                        onRetentionDaysChange = {},
+                        onAddSender = {},
+                        onAddApp = {},
+                        onRemoveRule = {},
+                        onBack = {},
+                    )
+                }
+            }
+        }
+
+        // "25 dk" ikiye bölünürse yüksekliği tek satırın yaklaşık iki katına çıkar.
+        val value = rule.onNodeWithTag("settings_focus_value").getUnclippedBoundsInRoot()
+        assertTrue("Değer birden çok satıra bölünmüş (yükseklik ${value.height})", value.height < 56.dp)
     }
 }

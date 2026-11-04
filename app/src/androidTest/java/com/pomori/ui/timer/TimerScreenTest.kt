@@ -1,6 +1,14 @@
 package com.pomori.ui.timer
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +22,7 @@ import com.pomori.ui.pomoriComposeRule
 import com.pomori.ui.str
 import com.pomori.ui.theme.PomoriTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -237,5 +246,69 @@ class TimerScreenTest {
         rule.onNode(hasText(rule.str(R.string.access_warning_action))).performClick()
 
         assertEquals(listOf("openAccess"), calls.log)
+    }
+
+    // --- büyük yazı tipi ve düzen ---
+
+    /** Sistem yazı tipi ölçeğini taklit eder (örneğin 2f = en büyük erişilebilirlik ayarı). */
+    private fun showScaled(state: TimerUiState, fontScale: Float, accessGranted: Boolean) {
+        rule.setContent {
+            val base = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = fontScale)) {
+                PomoriTheme {
+                    TimerScreen(
+                        state = state,
+                        onStartFocus = {},
+                        onCancelFocus = {},
+                        onStartBreak = {},
+                        onSkipBreak = {},
+                        notificationAccessGranted = accessGranted,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun assertCardDoesNotOverlapTheLabel() {
+        val card = rule.onNodeWithTag(TAG_ACCESS_WARNING).getUnclippedBoundsInRoot()
+        val label = rule.onNodeWithTag(TAG_PHASE).getUnclippedBoundsInRoot()
+        assertTrue("Uyarı kartı (alt: ${card.bottom}) faz etiketinin (üst: ${label.top}) üstüne biniyor", card.bottom <= label.top)
+    }
+
+    @Test
+    fun accessWarning_doesNotOverlapThePhaseLabel() {
+        showScaled(idle, fontScale = 1f, accessGranted = false)
+
+        assertCardDoesNotOverlapTheLabel()
+    }
+
+    @Test
+    fun accessWarning_doesNotOverlapThePhaseLabelWithTheLargestFonts() {
+        // Kart bir zamanlar sayacın üstüne bağımsız bir katmandı; yazı büyüyünce etiketin üstüne biniyordu.
+        showScaled(idle, fontScale = 2f, accessGranted = false)
+
+        assertCardDoesNotOverlapTheLabel()
+    }
+
+    @Test
+    fun withTheLargestFonts_everyControlIsStillReachable() {
+        showScaled(idle, fontScale = 2f, accessGranted = false)
+
+        // Sığmayan içerik kaydırılır: düğmelere kaydırılarak ulaşılabilir, hiçbiri kesilip kaybolmaz.
+        rule.onNodeWithTag(TAG_START_FOCUS).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun breakPendingLabel_fitsInsideTheRingAtNormalFontSize() {
+        showScaled(breakPending, fontScale = 1f, accessGranted = true)
+
+        // "Mola zamanı" halkaya (280 dp) sığar: iki satıra bölünüp taşmaz.
+        val ring = rule.onNodeWithContentDescription(
+            rule.str(R.string.timer_content_description, rule.str(R.string.phase_break_pending), rule.str(R.string.time_break_pending)),
+        ).getUnclippedBoundsInRoot()
+        val label = rule.onNodeWithTag(TAG_TIME, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("Etiket halkadan geniş", label.width <= ring.width)
+        assertTrue("Etiket halkadan yüksek", label.height <= ring.height)
+        assertTrue("Etiket tek satır olmalı", label.height < 56.dp)
     }
 }

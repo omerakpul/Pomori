@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Açık mod. Koyu karşılığı values-night/themes.xml içindedir. -->
     <style name="Theme.Pomori" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

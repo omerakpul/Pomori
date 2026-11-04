@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
@@ -49,6 +49,9 @@ import com.pomori.ui.theme.PomoriTheme
 
 /** Odak süresi 5'er dakika, mola ve saklama süresi 1'er birim değişir. */
 private const val FOCUS_STEP = 5
+
+/** Erişilebilirlik için dokunma hedefi en az 48 dp olmalıdır. */
+private val TOUCH_TARGET = 48.dp
 
 @Composable
 fun SettingsRoute(
@@ -235,7 +238,7 @@ private fun StepperRow(
             enabled = canDecrement,
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier
-                .size(44.dp)
+                .size(TOUCH_TARGET)
                 .semantics { contentDescription = decreaseDescription }
                 .testTag("${tag}_dec"),
         ) { Text("−", style = MaterialTheme.typography.titleLarge) }
@@ -243,9 +246,13 @@ private fun StepperRow(
             text = valueText,
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
-            // Sabit genişlik: "5 dk" ve "25 dk" aynı yeri kaplar, düğmeler satırlar arasında hizalı kalır.
+            // Tek satır: büyük yazı tipinde "25 dk" ikiye bölünmez, bunun yerine etiket daralır.
+            maxLines = 1,
+            softWrap = false,
+            // En az genişlik: normal boyutta "5 dk" ve "25 dk" aynı yeri kaplar, düğmeler satırlar arasında
+            // hizalı kalır; büyük yazı tipinde değer gerektiği kadar genişler.
             modifier = Modifier
-                .width(64.dp)
+                .widthIn(min = 64.dp)
                 .testTag("${tag}_value"),
         )
         OutlinedButton(
@@ -253,7 +260,7 @@ private fun StepperRow(
             enabled = canIncrement,
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier
-                .size(44.dp)
+                .size(TOUCH_TARGET)
                 .semantics { contentDescription = increaseDescription }
                 .testTag("${tag}_inc"),
         ) { Text("+", style = MaterialTheme.typography.titleLarge) }
