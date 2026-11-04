@@ -6,8 +6,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.pomori.di.SettingsPrefs
 import com.pomori.domain.model.SettingsDefaults
+import com.pomori.domain.model.ThemeMode
 import com.pomori.domain.repository.SettingsStore
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,6 +46,11 @@ class SettingsDataStore @Inject constructor(
     override val dailyGoalMinutes: Flow<Int> =
         intSetting(KEY_DAILY_GOAL, SettingsDefaults.DAILY_GOAL_MINUTES, SettingsDefaults.DAILY_GOAL_RANGE)
 
+    // Bilinmeyen ya da bozuk değer sistemi izlemeye düşer.
+    override val themeMode: Flow<ThemeMode> = dataStore.data
+        .map { prefs -> ThemeMode.entries.firstOrNull { it.name == prefs[KEY_THEME_MODE] } ?: ThemeMode.SYSTEM }
+        .distinctUntilChanged()
+
     override suspend fun setOnboardingDone() {
         dataStore.edit { it[KEY_ONBOARDING_DONE] = true }
     }
@@ -71,6 +78,10 @@ class SettingsDataStore @Inject constructor(
     override suspend fun setDailyGoalMinutes(minutes: Int) =
         write(KEY_DAILY_GOAL, minutes, SettingsDefaults.DAILY_GOAL_RANGE)
 
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[KEY_THEME_MODE] = mode.name }
+    }
+
     /** Eksikse varsayılan, aralık dışıysa en yakın sınır: akış her zaman geçerli bir değer verir. */
     private fun intSetting(key: Preferences.Key<Int>, default: Int, range: IntRange): Flow<Int> =
         dataStore.data.map { (it[key] ?: default).coerceIn(range) }.distinctUntilChanged()
@@ -88,5 +99,6 @@ class SettingsDataStore @Inject constructor(
         val KEY_SELECTED_PRESET = longPreferencesKey("selected_preset_id")
         val KEY_RETENTION_DAYS = intPreferencesKey("retention_days")
         val KEY_DAILY_GOAL = intPreferencesKey("daily_goal_minutes")
+        val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 }

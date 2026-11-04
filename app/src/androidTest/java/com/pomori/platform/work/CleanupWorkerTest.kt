@@ -63,6 +63,8 @@ class CleanupWorkerTest {
         override val restoreNotifications: Flow<Boolean> = flowOf(true)
         override val retentionDays: Flow<Int> = flowOf(days)
         override val dailyGoalMinutes: Flow<Int> = flowOf(0)
+        override val themeMode: Flow<com.pomori.domain.model.ThemeMode> = flowOf(com.pomori.domain.model.ThemeMode.SYSTEM)
+        override suspend fun setThemeMode(mode: com.pomori.domain.model.ThemeMode) = Unit
         override suspend fun setDailyGoalMinutes(minutes: Int) = Unit
         override suspend fun setOnboardingDone() = Unit
         override suspend fun setFocusMinutes(minutes: Int) = Unit

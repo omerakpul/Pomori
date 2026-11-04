@@ -57,6 +57,8 @@ import com.pomori.domain.model.SettingsDefaults
 import com.pomori.ui.components.IconBadge
 import com.pomori.ui.components.IconLabel
 import com.pomori.ui.components.InitialAvatar
+import androidx.compose.material3.FilterChip
+import com.pomori.domain.model.ThemeMode
 import com.pomori.ui.components.ScreenHeader
 import com.pomori.ui.components.SectionHeader
 import com.pomori.ui.components.SoftCard
@@ -76,6 +78,7 @@ fun SettingsRoute(
         onOpenPresets = onOpenPresets,
         onRetentionDaysChange = viewModel::setRetentionDays,
         onDailyGoalChange = viewModel::setDailyGoalMinutes,
+        onThemeModeChange = viewModel::setThemeMode,
         onRestoreNotificationsChange = viewModel::setRestoreNotifications,
         onAddSender = viewModel::addSender,
         onAddApp = viewModel::addApp,
@@ -97,6 +100,7 @@ fun SettingsScreen(
     onOpenPresets: () -> Unit = {},
     onRestoreNotificationsChange: (Boolean) -> Unit = {},
     onDailyGoalChange: (Int) -> Unit = {},
+    onThemeModeChange: (ThemeMode) -> Unit = {},
 ) {
     var showAppPicker by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
@@ -186,6 +190,36 @@ fun SettingsScreen(
                         )
                     }
                     Switch(checked = state.restoreNotifications, onCheckedChange = null)
+                }
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.settings_section_appearance), Modifier.padding(horizontal = 16.dp)) }
+        item {
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ThemeMode.entries.forEach { mode ->
+                        FilterChip(
+                            selected = state.themeMode == mode,
+                            onClick = { onThemeModeChange(mode) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (mode) {
+                                            ThemeMode.SYSTEM -> R.string.settings_theme_system
+                                            ThemeMode.LIGHT -> R.string.settings_theme_light
+                                            ThemeMode.DARK -> R.string.settings_theme_dark
+                                        },
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+                        )
+                    }
                 }
             }
         }

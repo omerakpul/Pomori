@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.InstalledApp
+import com.pomori.domain.model.ThemeMode
 import com.pomori.domain.repository.ExceptionRepository
 import com.pomori.domain.repository.InstalledApps
 import com.pomori.domain.repository.PresetRepository
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-private data class GeneralSettings(val retentionDays: Int, val restore: Boolean, val dailyGoalMinutes: Int)
+private data class GeneralSettings(val retentionDays: Int, val restore: Boolean, val dailyGoalMinutes: Int, val themeMode: ThemeMode)
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -43,7 +44,8 @@ class SettingsViewModel @Inject constructor(
         settings.retentionDays,
         settings.restoreNotifications,
         settings.dailyGoalMinutes,
-    ) { days, restore, goal -> GeneralSettings(days, restore, goal) }
+        settings.themeMode,
+    ) { days, restore, goal, theme -> GeneralSettings(days, restore, goal, theme) }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         presets.observeAll(),
@@ -60,10 +62,13 @@ class SettingsViewModel @Inject constructor(
             retentionDays = general.retentionDays,
             restoreNotifications = general.restore,
             dailyGoalMinutes = general.dailyGoalMinutes,
+            themeMode = general.themeMode,
             rules = rules.map { RuleItem(it, displayName(it, labels)) },
             selectableApps = apps.filter { it.packageName !in excepted },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SettingsUiState())
+
+    fun setThemeMode(mode: ThemeMode) = launch { settings.setThemeMode(mode) }
 
     fun setDailyGoalMinutes(minutes: Int) = launch { settings.setDailyGoalMinutes(minutes) }
 

@@ -102,6 +102,13 @@ class FakeSettingsStore(
     override val retentionDays: Flow<Int> = retention
     override val dailyGoalMinutes: Flow<Int> = dailyGoal
 
+    private val theme = MutableStateFlow(com.pomori.domain.model.ThemeMode.SYSTEM)
+    override val themeMode: Flow<com.pomori.domain.model.ThemeMode> = theme
+
+    override suspend fun setThemeMode(mode: com.pomori.domain.model.ThemeMode) {
+        theme.value = mode
+    }
+
     override suspend fun setDailyGoalMinutes(minutes: Int) {
         dailyGoal.value = minutes.coerceIn(SettingsDefaults.DAILY_GOAL_RANGE)
     }

@@ -1,5 +1,6 @@
 package com.pomori.domain.repository
 
+import com.pomori.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -30,6 +31,9 @@ interface SettingsStore {
     /** Günlük odak hedefi, dakika. 0 = hedef kapalı. */
     val dailyGoalMinutes: Flow<Int>
 
+    /** Tema tercihi; varsayılan: sistemi izle. */
+    val themeMode: Flow<ThemeMode>
+
     suspend fun setOnboardingDone()
 
     suspend fun setFocusMinutes(minutes: Int)
@@ -45,4 +49,6 @@ interface SettingsStore {
     suspend fun setRetentionDays(days: Int)
 
     suspend fun setDailyGoalMinutes(minutes: Int)
+
+    suspend fun setThemeMode(mode: ThemeMode)
 }
