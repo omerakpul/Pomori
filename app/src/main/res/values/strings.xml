@@ -23,6 +23,14 @@
     <string name="onboarding_grant_access">Bildirim erişimini aç</string>
     <string name="onboarding_skip">Şimdi değil</string>
 
+    <string name="digest_title">Bildirim özeti</string>
+    <string name="digest_summary">%1$d bildirim, %2$d uygulama</string>
+    <string name="digest_empty_title">Bu seansta bildirim gelmedi</string>
+    <string name="digest_empty_body">Odağın hiç bölünmedi, harika iş!</string>
+    <string name="digest_state_expanded">Açık</string>
+    <string name="digest_state_collapsed">Kapalı</string>
+    <string name="digest_item_untitled">Başlıksız bildirim</string>
+
     <string name="channel_timer_name">Sayaç</string>
     <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>
     <string name="channel_alerts_name">Seans bitişi</string>

@@ -35,7 +35,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] `FocusNotificationListener`: filtreleme (ongoing, grup özeti, kendi uygulaması), kaydetme, `cancelNotification`
 - [x] `NotificationGrouper` + unit testler
 - [x] `GetDigest` use case, `DigestViewModel`
-- [ ] `DigestScreen`: uygulama bazlı genişleyen liste, boş durum ekranı
+- [x] `DigestScreen`: uygulama bazlı genişleyen liste, boş durum ekranı
 - [ ] Seans bitişinde özet ekranına yönlendirme
 - [ ] İzin verilmediğinde zarif davranış (uygulama çalışır, özet boş, uyarı kartı görünür)
 
