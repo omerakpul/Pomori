@@ -2,6 +2,7 @@ package com.pomori.ui.stats
 
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
+import com.pomori.domain.model.LabelFocus
 
 data class StatsUiState(
     /** İlk veri gelene kadar true; ekran bu sürede "veri yok" durumunu göstermemelidir. */
@@ -12,6 +13,8 @@ data class StatsUiState(
     val topDistractors: List<Distractor> = emptyList(),
     /** Bugün dahil son 7 gün, eskiden yeniye. */
     val dailyFocus: List<DayFocus> = emptyList(),
+    /** Etikete göre kırılım; hiç etiket yoksa boş ve bölüm gizlenir. */
+    val labelBreakdown: List<LabelFocus> = emptyList(),
 ) {
     /** Grafik, en az bir günde odak süresi varken anlamlıdır; hepsi sıfırsa boş bir şablon göstermeyiz. */
     val hasChart: Boolean get() = dailyFocus.any { it.focusMs > 0 }
@@ -25,6 +28,8 @@ data class StatsUiState(
     /** Toplam süre "X sa Y dk" yazılırken kullanılan parçalar. */
     val focusHours: Int get() = (totalFocusMs / MS_PER_HOUR).toInt()
     val focusMinutes: Int get() = ((totalFocusMs / MS_PER_MINUTE) % 60).toInt()
+
+    val maxLabelFocusMs: Long get() = labelBreakdown.maxOfOrNull { it.focusMs } ?: 0L
 
     /** Çubukların oranı için en kalabalık uygulamanın bildirim sayısı. */
     val maxDistractorCount: Int get() = topDistractors.maxOfOrNull { it.count } ?: 0

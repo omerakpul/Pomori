@@ -17,4 +17,5 @@ data class FocusSessionEntity(
     val status: SessionStatus,
     val presetId: Long? = null,
     @ColumnInfo(defaultValue = "0") val interruptions: Int = 0,
+    val label: String? = null,
 )

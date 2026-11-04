@@ -5,6 +5,7 @@ import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.model.SessionStatus
 import com.pomori.domain.model.SessionType
+import com.pomori.domain.model.normalizeLabel
 import com.pomori.domain.repository.ActiveSessionStore
 import com.pomori.domain.repository.SessionRepository
 import com.pomori.domain.timer.TimerEvent
@@ -28,6 +29,7 @@ class StartSession @Inject constructor(
         durationMs: Long,
         isLongBreak: Boolean = false,
         presetId: Long? = null,
+        label: String? = null,
     ): TimerState {
         // Süresi dolmuş ama henüz kapatılmamış bir önceki seans varsa önce onu kapat.
         endSession(EndReason.TIME_UP)
@@ -53,6 +55,8 @@ class StartSession @Inject constructor(
                 plannedDurationMs = durationMs,
                 status = SessionStatus.RUNNING,
                 presetId = presetId,
+                // Etiket yalnızca odak seansına aittir; mola etiketlenmez.
+                label = if (type == SessionType.FOCUS) normalizeLabel(label) else null,
             ),
         )
         activeStore.set(

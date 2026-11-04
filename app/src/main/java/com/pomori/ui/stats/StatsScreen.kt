@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.R
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
+import com.pomori.domain.model.LabelFocus
 import com.pomori.ui.components.EmptyState
 import com.pomori.ui.components.InitialAvatar
 import com.pomori.ui.components.ScreenHeader
@@ -129,6 +130,21 @@ private fun StatsContent(state: StatsUiState) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.padding(top = 20.dp),
+                )
+            }
+        }
+        if (state.labelBreakdown.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.stats_labels_title), Modifier.padding(start = 0.dp)) }
+            itemsIndexed(state.labelBreakdown, key = { _, it -> it.label ?: "" }) { index, entry ->
+                LabelRow(entry, maxMs = state.maxLabelFocusMs)
+                if (index != state.labelBreakdown.lastIndex) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
         }
@@ -261,6 +277,44 @@ private fun BigStat(value: String, label: String, valueTag: String, accent: Bool
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun LabelRow(entry: LabelFocus, maxMs: Long) {
+    val name = entry.label ?: stringResource(R.string.stats_label_none)
+    val duration = durationText(entry.focusMs)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp)
+            .testTag("stats_label_${entry.label ?: "none"}")
+            .clearAndSetSemantics { contentDescription = "$name, $duration" },
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(text = duration, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(50)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction = if (maxMs == 0L) 0f else entry.focusMs.toFloat() / maxMs)
+                    .height(4.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50)),
+            )
+        }
     }
 }
 

@@ -86,3 +86,13 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE `focus_sessions` ADD COLUMN `interruptions` INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+/**
+ * v5 → v6: seanslara isteğe bağlı etiket (`label`) eklendi. Mevcut seanslar etiketsiz (NULL) kalır.
+ * SQL, `schemas/.../6.json` ile birebir aynı olmalı; MigrationTest bunu doğrular.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `focus_sessions` ADD COLUMN `label` TEXT")
+    }
+}

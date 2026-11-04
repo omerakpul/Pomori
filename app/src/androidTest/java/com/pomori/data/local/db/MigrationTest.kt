@@ -87,12 +87,13 @@ class MigrationTest {
 
         val db = helper.runMigrationsAndValidate(
             DB_NAME,
-            5,
+            6,
             true,
             MIGRATION_1_2,
             MIGRATION_2_3,
             MIGRATION_3_4,
             MIGRATION_4_5,
+            MIGRATION_5_6,
         )
 
         db.query("SELECT COUNT(*) FROM focus_sessions").use {
@@ -159,6 +160,25 @@ class MigrationTest {
             it.moveToFirst()
             assertEquals("COMPLETED", it.getString(0))
             assertEquals(0, it.getInt(1))
+        }
+    }
+
+    @Test
+    fun migrate5To6_keepsSessionsUnlabelled() {
+        helper.createDatabase(DB_NAME, 5).apply {
+            execSQL(
+                "INSERT INTO focus_sessions (id, type, startedAt, plannedDurationMs, endedAt, status, interruptions) " +
+                    "VALUES (1, 'FOCUS', 1000, 1500000, 2000, 'COMPLETED', 2)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB_NAME, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT interruptions, label FROM focus_sessions WHERE id = 1").use {
+            it.moveToFirst()
+            assertEquals(2, it.getInt(0))
+            assertEquals(true, it.isNull(1))
         }
     }
 

@@ -36,7 +36,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -86,6 +90,7 @@ fun TimerRoute(
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val label by viewModel.label.collectAsStateWithLifecycle()
     val pendingDigest by viewModel.pendingDigestSessionId.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val accessGranted = rememberNotificationAccessGranted()
@@ -122,6 +127,8 @@ fun TimerRoute(
         },
         onCancelFocus = viewModel::cancelFocus,
         onInterrupt = viewModel::interrupt,
+        label = label,
+        onLabelChange = viewModel::setLabel,
         onStartBreak = viewModel::startBreak,
         onSkipBreak = viewModel::skipBreak,
         notificationAccessGranted = accessGranted,
@@ -143,6 +150,8 @@ fun TimerScreen(
     onSkipBreak: () -> Unit,
     modifier: Modifier = Modifier,
     onInterrupt: () -> Unit = {},
+    label: String = "",
+    onLabelChange: (String) -> Unit = {},
     notificationAccessGranted: Boolean = true,
     onOpenNotificationAccess: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -201,6 +210,20 @@ fun TimerScreen(
                 selectedId = state.selectedPresetId,
                 onSelect = onSelectPreset,
                 onManage = onOpenPresets,
+            )
+        }
+
+        if (state.phase == TimerPhase.IDLE) {
+            OutlinedTextField(
+                value = label,
+                onValueChange = onLabelChange,
+                singleLine = true,
+                label = { Text(stringResource(R.string.label_field)) },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 4.dp)
+                    .testTag(TAG_LABEL),
             )
         }
 
@@ -608,6 +631,7 @@ const val TAG_TIME = "timer_time"
 const val TAG_START_FOCUS = "timer_start_focus"
 const val TAG_CANCEL = "timer_cancel"
 const val TAG_INTERRUPT = "timer_interrupt"
+const val TAG_LABEL = "timer_label"
 const val TAG_START_BREAK = "timer_start_break"
 const val TAG_SKIP = "timer_skip"
 const val TAG_SETTINGS = "timer_settings"

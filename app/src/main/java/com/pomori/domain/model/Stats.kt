@@ -15,6 +15,13 @@ data class DayFocus(
     val focusMs: Long,
 )
 
+/** Bir etikete ait tamamlanan odak süresi. [label] null ise etiketsiz seanslardır. */
+data class LabelFocus(
+    val label: String?,
+    val focusMs: Long,
+    val sessions: Int,
+)
+
 /** Son 7 günün özeti. */
 data class WeeklyStats(
     /** Tamamlanan odak seanslarının toplam süresi, ms. İptal edilenler sayılmaz. */
@@ -24,4 +31,6 @@ data class WeeklyStats(
     val topDistractors: List<Distractor>,
     /** Bugün dahil son 7 takvim günü, eskiden yeniye; seans olmayan gün 0 ms ile yer alır. */
     val dailyFocus: List<DayFocus> = emptyList(),
+    /** Etikete göre kırılım, süreye göre azalan; etiketsizler en sonda. Hiç etiket kullanılmadıysa boş. */
+    val labelBreakdown: List<LabelFocus> = emptyList(),
 )

@@ -23,6 +23,7 @@ class StatsViewModel @Inject constructor(
                 completedSessions = stats.completedSessions,
                 topDistractors = stats.topDistractors,
                 dailyFocus = stats.dailyFocus,
+                labelBreakdown = stats.labelBreakdown,
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), StatsUiState())

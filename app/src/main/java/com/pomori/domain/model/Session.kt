@@ -15,6 +15,8 @@ data class FocusSession(
     val presetId: Long? = null,
     /** Seans sırasında kullanıcının bastığı "kesinti" sayısı. Süre durmaz. */
     val interruptions: Int = 0,
+    /** Kullanıcının seans başlarken yazdığı isteğe bağlı etiket (ör. "Ders"). Yoksa null. */
+    val label: String? = null,
 )
 
 /**

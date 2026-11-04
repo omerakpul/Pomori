@@ -35,6 +35,7 @@ internal fun FocusSession.toEntity() = FocusSessionEntity(
     status = status,
     presetId = presetId,
     interruptions = interruptions,
+    label = label,
 )
 
 internal fun FocusSessionEntity.toDomain() = FocusSession(
@@ -46,4 +47,5 @@ internal fun FocusSessionEntity.toDomain() = FocusSession(
     status = status,
     presetId = presetId,
     interruptions = interruptions,
+    label = label,
 )
