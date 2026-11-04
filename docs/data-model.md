@@ -23,6 +23,14 @@
 | text | String? | |
 | postedAt | Long | epoch ms |
 
+### Şema sürümleri
+| Sürüm | Değişiklik |
+|---|---|
+| 1 | `focus_sessions` |
+| 2 | `captured_notifications` eklendi (`MIGRATION_1_2`, `MigrationTest` ile doğrulanır) |
+
+Her şema değişikliğinde sürümü artırın, `Migration` yazın ve `schemas/` altındaki yeni JSON'u commit edin.
+
 ### ExceptionRuleEntity
 | Alan | Tür | Not |
 |---|---|---|
