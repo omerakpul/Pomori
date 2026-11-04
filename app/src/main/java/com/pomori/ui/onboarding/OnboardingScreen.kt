@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -26,7 +27,8 @@ import com.pomori.ui.theme.PomoriTheme
 /** Bildirim erişimi istemeden önce neden istediğimizi ve neyi sakladığımızı açıklar. */
 @Composable
 fun OnboardingScreen(
-    onContinue: () -> Unit,
+    onGrantAccess: () -> Unit,
+    onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -55,12 +57,20 @@ fun OnboardingScreen(
         )
         Spacer(Modifier.height(8.dp))
         Button(
-            onClick = onContinue,
+            onClick = onGrantAccess,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("onboarding_continue"),
+                .testTag("onboarding_grant_access"),
         ) {
-            Text(stringResource(R.string.onboarding_continue))
+            Text(stringResource(R.string.onboarding_grant_access))
+        }
+        TextButton(
+            onClick = onSkip,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("onboarding_skip"),
+        ) {
+            Text(stringResource(R.string.onboarding_skip))
         }
     }
 }
@@ -84,5 +94,5 @@ private fun OnboardingSection(title: String, body: String) {
 @Preview(showBackground = true)
 @Composable
 private fun OnboardingScreenPreview() {
-    PomoriTheme { OnboardingScreen(onContinue = {}) }
+    PomoriTheme { OnboardingScreen(onGrantAccess = {}, onSkip = {}) }
 }

@@ -20,7 +20,8 @@
     <string name="onboarding_data_body">Yakaladığımız her bildirim için uygulama adı, başlık, metin ve zaman bilgisi saklanır. İstisna olarak belirlediğin uygulamalara dokunmayız.</string>
     <string name="onboarding_privacy_title">Verin cihazından çıkmaz</string>
     <string name="onboarding_privacy_body">Uygulamanın internet izni yok, hiçbir veri gönderilmez. Kayıtlar varsayılan olarak 7 gün sonra otomatik silinir.</string>
-    <string name="onboarding_continue">Anladım, devam et</string>
+    <string name="onboarding_grant_access">Bildirim erişimini aç</string>
+    <string name="onboarding_skip">Şimdi değil</string>
 
     <string name="channel_timer_name">Sayaç</string>
     <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>

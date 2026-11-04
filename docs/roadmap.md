@@ -30,7 +30,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 **Hedef:** Seans sırasında bildirimleri tut, mola başlayınca özet göster.
 
 - [x] Onboarding ekranı: neden bildirim erişimi istiyoruz, hangi veriyi saklıyoruz
-- [ ] Bildirim erişim iznini kontrol eden yardımcı ve ayarlara yönlendirme
+- [x] Bildirim erişim iznini kontrol eden yardımcı ve ayarlara yönlendirme
 - [ ] `CapturedNotificationEntity`, DAO, repository
 - [ ] `FocusNotificationListener`: filtreleme (ongoing, grup özeti, kendi uygulaması), kaydetme, `cancelNotification`
 - [ ] `NotificationGrouper` + unit testler
