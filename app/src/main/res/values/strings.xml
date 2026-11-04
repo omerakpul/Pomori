@@ -35,6 +35,20 @@
     <string name="digest_empty_body_no_access">Bildirim erişimi kapalı olduğu için bu seansta gelen bildirimler yakalanmamış olabilir.</string>
 
     <string name="timer_settings">Ayarlar</string>
+    <string name="timer_stats">İstatistikler</string>
+
+    <string name="stats_title">İstatistikler</string>
+    <string name="stats_back">Geri</string>
+    <string name="stats_period">Son 7 gün</string>
+    <string name="stats_focus_time">Odak süresi</string>
+    <string name="stats_completed">Tamamlanan seans</string>
+    <string name="stats_duration_hm">%1$d sa %2$d dk</string>
+    <string name="stats_duration_m">%d dk</string>
+    <string name="stats_distractors_title">En çok dikkat dağıtanlar</string>
+    <string name="stats_distractors_empty">Bu hafta hiç bildirim yakalanmadı.</string>
+    <string name="stats_notification_count">%d bildirim</string>
+    <string name="stats_empty_title">Henüz veri yok</string>
+    <string name="stats_empty_body">Bir odak seansını tamamladığında istatistiklerin burada görünür.</string>
 
     <string name="settings_title">Ayarlar</string>
     <string name="settings_back">Geri</string>

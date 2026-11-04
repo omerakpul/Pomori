@@ -2,8 +2,10 @@ package com.pomori.data.repository
 
 import app.cash.turbine.test
 import com.pomori.data.local.db.CapturedNotificationEntity
+import com.pomori.data.local.db.DistractorRow
 import com.pomori.data.local.db.NotificationDao
 import com.pomori.domain.model.CapturedNotification
+import com.pomori.domain.model.Distractor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -93,8 +95,35 @@ class NotificationRepositoryImplTest {
         }
     }
 
+    @Test
+    fun `top distractors map the query rows to domain distractors`() = runTest {
+        dao.distractorRows.value = listOf(
+            DistractorRow(packageName = "com.whatsapp", appLabel = "WhatsApp", cnt = 6, lastAt = 10),
+            DistractorRow(packageName = "com.google.android.gm", appLabel = "Gmail", cnt = 2, lastAt = 5),
+        )
+
+        repository.observeTopDistractors(from = 0, limit = 5).test {
+            assertEquals(
+                listOf(
+                    Distractor("com.whatsapp", "WhatsApp", 6),
+                    Distractor("com.google.android.gm", "Gmail", 2),
+                ),
+                awaitItem(),
+            )
+        }
+    }
+
+    @Test
+    fun `top distractors pass the window and the limit to the query`() = runTest {
+        repository.observeTopDistractors(from = 1234, limit = 3).test { awaitItem() }
+
+        assertEquals(1234L to 3, dao.lastDistractorQuery)
+    }
+
     private class FakeNotificationDao : NotificationDao {
         private val state = MutableStateFlow<List<CapturedNotificationEntity>>(emptyList())
+        val distractorRows = MutableStateFlow<List<DistractorRow>>(emptyList())
+        var lastDistractorQuery: Pair<Long, Int>? = null
         val rows: List<CapturedNotificationEntity> get() = state.value
 
         override suspend fun insert(notification: CapturedNotificationEntity): Long {
@@ -105,5 +134,10 @@ class NotificationRepositoryImplTest {
 
         override fun observeBySession(sessionId: Long): Flow<List<CapturedNotificationEntity>> =
             state.map { all -> all.filter { it.sessionId == sessionId } }
+
+        override fun observeTopDistractors(from: Long, limit: Int): Flow<List<DistractorRow>> {
+            lastDistractorQuery = from to limit
+            return distractorRows
+        }
     }
 }

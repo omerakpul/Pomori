@@ -3,6 +3,7 @@ package com.pomori.data.repository
 import com.pomori.data.local.db.CapturedNotificationEntity
 import com.pomori.data.local.db.NotificationDao
 import com.pomori.domain.model.CapturedNotification
+import com.pomori.domain.model.Distractor
 import com.pomori.domain.repository.NotificationRepository
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,11 @@ class NotificationRepositoryImpl @Inject constructor(
 
     override fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>> =
         dao.observeBySession(sessionId).map { rows -> rows.map { it.toDomain() } }
+
+    override fun observeTopDistractors(from: Long, limit: Int): Flow<List<Distractor>> =
+        dao.observeTopDistractors(from, limit).map { rows ->
+            rows.map { Distractor(packageName = it.packageName, appLabel = it.appLabel, count = it.cnt) }
+        }
 }
 
 internal fun CapturedNotification.toEntity() = CapturedNotificationEntity(

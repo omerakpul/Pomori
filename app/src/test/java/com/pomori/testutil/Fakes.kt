@@ -3,8 +3,11 @@ package com.pomori.testutil
 import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.ExceptionRule
+import com.pomori.domain.model.Distractor
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.model.InstalledApp
+import com.pomori.domain.model.SessionStatus
+import com.pomori.domain.model.SessionType
 import com.pomori.domain.model.SettingsDefaults
 import com.pomori.domain.repository.ActiveSessionStore
 import com.pomori.domain.repository.ExceptionRepository
@@ -20,17 +23,30 @@ class FakeSessionRepository : SessionRepository {
     val rows = linkedMapOf<Long, FocusSession>()
     private var nextId = 1L
 
+    /** Her değişiklikte artar; gözlenen akışlar bununla yeniden hesaplanır. */
+    private val version = MutableStateFlow(0)
+
     override suspend fun insert(session: FocusSession): Long {
         val id = nextId++
         rows[id] = session.copy(id = id)
+        version.value++
         return id
     }
 
     override suspend fun update(session: FocusSession) {
         rows[session.id] = session
+        version.value++
     }
 
     override suspend fun getById(id: Long): FocusSession? = rows[id]
+
+    // Gerçek DAO sorgusuyla aynı koşullar: odak + tamamlandı + startedAt >= from, yeniden eskiye.
+    override fun observeCompletedFocusSince(from: Long): Flow<List<FocusSession>> =
+        version.map {
+            rows.values
+                .filter { it.type == SessionType.FOCUS && it.status == SessionStatus.COMPLETED && it.startedAt >= from }
+                .sortedByDescending { it.startedAt }
+        }
 }
 
 class FakeActiveSessionStore(initial: ActiveSession? = null) : ActiveSessionStore {
@@ -126,4 +142,20 @@ class FakeNotificationRepository : NotificationRepository {
 
     override fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>> =
         state.map { all -> all.filter { it.sessionId == sessionId }.sortedByDescending { it.postedAt } }
+
+    // Gerçek sorguyla aynı: sayı azalan, sonra etiket (harf duyarsız), sonra paket; etiket en yeni satırdan.
+    override fun observeTopDistractors(from: Long, limit: Int): Flow<List<Distractor>> =
+        state.map { all ->
+            all.filter { it.postedAt >= from }
+                .groupBy { it.packageName }
+                .map { (pkg, items) ->
+                    Distractor(pkg, items.maxBy { it.postedAt }.appLabel, items.size)
+                }
+                .sortedWith(
+                    compareByDescending<Distractor> { it.count }
+                        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.appLabel }
+                        .thenBy { it.packageName },
+                )
+                .take(limit)
+        }
 }

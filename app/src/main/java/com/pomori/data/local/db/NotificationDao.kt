@@ -19,4 +19,28 @@ interface NotificationDao {
         """,
     )
     fun observeBySession(sessionId: Long): Flow<List<CapturedNotificationEntity>>
+
+    /**
+     * Uygulama başına bildirim sayısı. `MAX(postedAt)` ile birlikte seçilen çıplak `appLabel`,
+     * SQLite kuralı gereği en yeni satırdan gelir; etiket zamanla değişmişse güncel olan görünür.
+     */
+    @Query(
+        """
+        SELECT packageName, appLabel, COUNT(*) AS cnt, MAX(postedAt) AS lastAt
+        FROM captured_notifications
+        WHERE postedAt >= :from
+        GROUP BY packageName
+        ORDER BY cnt DESC, appLabel COLLATE NOCASE, packageName
+        LIMIT :limit
+        """,
+    )
+    fun observeTopDistractors(from: Long, limit: Int): Flow<List<DistractorRow>>
 }
+
+/** [NotificationDao.observeTopDistractors] sorgusunun satırı. `lastAt` yalnızca etiket seçimi içindir. */
+data class DistractorRow(
+    val packageName: String,
+    val appLabel: String,
+    val cnt: Int,
+    val lastAt: Long,
+)

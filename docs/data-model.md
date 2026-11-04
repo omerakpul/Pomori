@@ -156,6 +156,13 @@ interface ExceptionDao {
 - Gönderen kuralı: başlıkta büyük/küçük harf duyarsız içerir kontrolü.
 - Boş ya da yalnızca boşluktan oluşan kural hiçbir şeyle eşleşmez (aksi halde `"".contains("")` her bildirimi istisna sayardı). Kural değerleri `ExceptionRepository.add` içinde kırpılır.
 
+### GetWeeklyStats
+`operator fun invoke(): Flow<WeeklyStats>` — son 7 gün (akış toplanmaya başladığı andan geriye).
+- Toplam odak süresi ve seans sayısı: yalnızca tamamlanan **odak** seansları (iptal, çalışan ve mola sayılmaz); süre olarak planlanan süre alınır.
+- En çok dikkat dağıtanlar: penceredeki bildirimler paket adına göre sayılır, en fazla 5 uygulama. Sıralama: sayı azalan, eşitlikte uygulama adı (harf duyarsız), sonra paket adı.
+- Uygulama adı, o uygulamanın **en yeni** bildirimindeki addır (SQLite'ta `MAX(postedAt)` ile birlikte seçilen çıplak sütun, en büyük satırdan gelir).
+- Pencere sınırları dahildir: tam 7 gün önce başlayan seans sayılır.
+
 ## Test edilecek sınır durumları
 - Boş bildirim listesi → `total = 0`, boş `apps`.
 - Aynı sayıda bildirimi olan iki uygulama → deterministik sıralama.

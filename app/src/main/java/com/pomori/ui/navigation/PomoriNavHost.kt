@@ -10,11 +10,13 @@ import androidx.navigation.navArgument
 import com.pomori.ui.digest.DigestRoute
 import com.pomori.ui.digest.DigestViewModel
 import com.pomori.ui.settings.SettingsRoute
+import com.pomori.ui.stats.StatsRoute
 import com.pomori.ui.timer.TimerRoute
 
 object Routes {
     const val TIMER = "timer"
     const val SETTINGS = "settings"
+    const val STATS = "stats"
 
     /** `{sessionId}` argümanı DigestViewModel'in SavedStateHandle'ına otomatik gelir. */
     const val DIGEST = "digest/{${DigestViewModel.ARG_SESSION_ID}}"
@@ -22,7 +24,7 @@ object Routes {
     fun digest(sessionId: Long) = "digest/$sessionId"
 }
 
-/** Uygulamanın ana ekranları: sayaç, ayarlar ve seans bitince açılan bildirim özeti. */
+/** Uygulamanın ana ekranları: sayaç, istatistikler, ayarlar ve seans bitince açılan bildirim özeti. */
 @Composable
 fun PomoriNavHost(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
@@ -31,10 +33,14 @@ fun PomoriNavHost(modifier: Modifier = Modifier) {
             TimerRoute(
                 onOpenDigest = { sessionId -> navController.navigate(Routes.digest(sessionId)) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenStats = { navController.navigate(Routes.STATS) },
             )
         }
         composable(Routes.SETTINGS) {
             SettingsRoute(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.STATS) {
+            StatsRoute(onBack = { navController.popBackStack() })
         }
         composable(
             route = Routes.DIGEST,

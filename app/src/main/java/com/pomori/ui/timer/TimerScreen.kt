@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +48,7 @@ import com.pomori.ui.theme.PomoriTheme
 fun TimerRoute(
     onOpenDigest: (sessionId: Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenStats: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
@@ -91,6 +93,7 @@ fun TimerRoute(
         notificationAccessGranted = accessGranted,
         onOpenNotificationAccess = { NotificationListenerAccess.openSettings(context) },
         onOpenSettings = onOpenSettings,
+        onOpenStats = onOpenStats,
         modifier = modifier,
     )
 }
@@ -106,6 +109,7 @@ fun TimerScreen(
     notificationAccessGranted: Boolean = true,
     onOpenNotificationAccess: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenStats: () -> Unit = {},
 ) {
     val phaseLabel = when (state.phase) {
         TimerPhase.IDLE -> stringResource(R.string.phase_idle)
@@ -131,14 +135,21 @@ fun TimerScreen(
             )
         }
         // Süreyi çalışan bir seansın ortasında değiştirmek karışıklık yaratır: ayarlar yalnızca boştayken.
+        // İstatistikler de burada durur; seans sırasında dikkat dağıtmasın.
         if (state.phase == TimerPhase.IDLE) {
-            TextButton(
-                onClick = onOpenSettings,
+            Row(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-                    .testTag(TAG_SETTINGS),
-            ) { Text(stringResource(R.string.timer_settings)) }
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextButton(onClick = onOpenStats, modifier = Modifier.testTag(TAG_STATS)) {
+                    Text(stringResource(R.string.timer_stats))
+                }
+                TextButton(onClick = onOpenSettings, modifier = Modifier.testTag(TAG_SETTINGS)) {
+                    Text(stringResource(R.string.timer_settings))
+                }
+            }
         }
         Column(
             modifier = Modifier
@@ -219,6 +230,7 @@ const val TAG_CANCEL = "timer_cancel"
 const val TAG_START_BREAK = "timer_start_break"
 const val TAG_SKIP = "timer_skip"
 const val TAG_SETTINGS = "timer_settings"
+const val TAG_STATS = "timer_stats"
 
 @Preview(showBackground = true)
 @Composable

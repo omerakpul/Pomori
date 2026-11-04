@@ -1,0 +1,32 @@
+package com.pomori.ui.stats
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.pomori.domain.usecase.GetWeeklyStats
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+
+@HiltViewModel
+class StatsViewModel @Inject constructor(
+    getWeeklyStats: GetWeeklyStats,
+) : ViewModel() {
+
+    val uiState: StateFlow<StatsUiState> = getWeeklyStats()
+        .map { stats ->
+            StatsUiState(
+                isLoading = false,
+                totalFocusMs = stats.totalFocusMs,
+                completedSessions = stats.completedSessions,
+                topDistractors = stats.topDistractors,
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), StatsUiState())
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
+    }
+}
