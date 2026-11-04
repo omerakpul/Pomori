@@ -1,0 +1,45 @@
+name: Release
+
+# v* etiketi atılınca imzalı APK'yı derler ve GitHub Releases'e koyar.
+# Gerekli repo secret'ları: POMORI_KEYSTORE_BASE64, POMORI_KEYSTORE_PASSWORD,
+# POMORI_KEY_ALIAS, POMORI_KEY_PASSWORD
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore keystore
+        run: echo "${{ secrets.POMORI_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/pomori-release.jks"
+
+      - name: Unit tests
+        run: ./gradlew test
+
+      - name: Build signed release APK
+        env:
+          POMORI_KEYSTORE_FILE: ${{ runner.temp }}/pomori-release.jks
+          POMORI_KEYSTORE_PASSWORD: ${{ secrets.POMORI_KEYSTORE_PASSWORD }}
+          POMORI_KEY_ALIAS: ${{ secrets.POMORI_KEY_ALIAS }}
+          POMORI_KEY_PASSWORD: ${{ secrets.POMORI_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: mv app/build/outputs/apk/release/app-release.apk "pomori-${GITHUB_REF_NAME}.apk"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: pomori-*.apk
+          generate_release_notes: true

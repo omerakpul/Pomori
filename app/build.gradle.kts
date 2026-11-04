@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -21,8 +23,35 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // İmza bilgisi repoda tutulmaz: yerelde keystore.properties, CI'da ortam değişkenleri.
+    // İkisi de yoksa release derlemesi imzasız çıkar (debug/test akışı bozulmaz).
+    val keystoreProps = Properties().apply {
+        val f = rootProject.file("keystore.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    fun signingValue(propKey: String, envKey: String): String? =
+        keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
+
+    val releaseStoreFile = signingValue("storeFile", "POMORI_KEYSTORE_FILE")
+    val hasReleaseSigning = releaseStoreFile != null &&
+        signingValue("storePassword", "POMORI_KEYSTORE_PASSWORD") != null &&
+        signingValue("keyAlias", "POMORI_KEY_ALIAS") != null &&
+        signingValue("keyPassword", "POMORI_KEY_PASSWORD") != null
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = signingValue("storePassword", "POMORI_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "POMORI_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "POMORI_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
