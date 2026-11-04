@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,6 +43,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.R
 import com.pomori.domain.model.AppDigest
 import com.pomori.domain.model.CapturedNotification
+import com.pomori.platform.permission.NotificationListenerAccess
+import com.pomori.ui.permission.NotificationAccessCard
+import com.pomori.ui.permission.rememberNotificationAccessGranted
 import com.pomori.ui.theme.PomoriTheme
 import java.time.Instant
 import java.time.ZoneId
@@ -56,10 +60,13 @@ fun DigestRoute(
     viewModel: DigestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     DigestScreen(
         state = state,
         onToggleApp = viewModel::toggleExpanded,
         onClose = onClose,
+        notificationAccessGranted = rememberNotificationAccessGranted(),
+        onOpenNotificationAccess = { NotificationListenerAccess.openSettings(context) },
         modifier = modifier,
     )
 }
@@ -70,13 +77,15 @@ fun DigestScreen(
     onToggleApp: (String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationAccessGranted: Boolean = true,
+    onOpenNotificationAccess: () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
             when {
                 // İlk veri gelene kadar hiçbir şey çizme: boş durum yanıp sönmesin.
                 state.isLoading -> Unit
-                state.isEmpty -> EmptyDigest()
+                state.isEmpty -> EmptyDigest(notificationAccessGranted, onOpenNotificationAccess)
                 else -> DigestList(state, onToggleApp)
             }
         }
@@ -95,7 +104,11 @@ fun DigestScreen(
 }
 
 @Composable
-private fun EmptyDigest(modifier: Modifier = Modifier) {
+private fun EmptyDigest(
+    notificationAccessGranted: Boolean,
+    onOpenNotificationAccess: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -104,18 +117,29 @@ private fun EmptyDigest(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Erişim kapalıyken "hiç bölünmedin" demek yanlış olurdu: bildirimler gelmiş ama yakalanmamış olabilir.
         Text(
-            text = stringResource(R.string.digest_empty_title),
+            text = stringResource(
+                if (notificationAccessGranted) R.string.digest_empty_title else R.string.digest_empty_title_no_access,
+            ),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },
         )
         Text(
-            text = stringResource(R.string.digest_empty_body),
+            text = stringResource(
+                if (notificationAccessGranted) R.string.digest_empty_body else R.string.digest_empty_body_no_access,
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (!notificationAccessGranted) {
+            NotificationAccessCard(
+                onOpenSettings = onOpenNotificationAccess,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+        }
     }
 }
 
@@ -284,6 +308,19 @@ private fun DigestScreenPreview() {
             ),
             onToggleApp = {},
             onClose = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EmptyDigestNoAccessPreview() {
+    PomoriTheme {
+        DigestScreen(
+            state = DigestUiState(isLoading = false),
+            onToggleApp = {},
+            onClose = {},
+            notificationAccessGranted = false,
         )
     }
 }

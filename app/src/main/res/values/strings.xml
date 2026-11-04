@@ -31,6 +31,12 @@
     <string name="digest_state_collapsed">Kapalı</string>
     <string name="digest_item_untitled">Başlıksız bildirim</string>
     <string name="digest_continue">Devam</string>
+    <string name="digest_empty_title_no_access">Kaydedilen bildirim yok</string>
+    <string name="digest_empty_body_no_access">Bildirim erişimi kapalı olduğu için bu seansta gelen bildirimler yakalanmamış olabilir.</string>
+
+    <string name="access_warning_title">Bildirimler yakalanmıyor</string>
+    <string name="access_warning_body">Bildirim erişimi kapalı. Odak seansında gelen bildirimler özete eklenmez, her zamanki gibi gelmeye devam eder.</string>
+    <string name="access_warning_action">Erişimi aç</string>
 
     <string name="channel_timer_name">Sayaç</string>
     <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>

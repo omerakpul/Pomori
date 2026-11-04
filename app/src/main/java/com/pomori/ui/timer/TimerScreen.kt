@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.R
+import com.pomori.platform.permission.NotificationListenerAccess
 import com.pomori.platform.permission.NotificationPermission
+import com.pomori.ui.permission.NotificationAccessCard
+import com.pomori.ui.permission.rememberNotificationAccessGranted
 import com.pomori.platform.service.FocusForegroundService
 import com.pomori.ui.theme.PomoriTheme
 
@@ -49,6 +52,7 @@ fun TimerRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingDigest by viewModel.pendingDigestSessionId.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val accessGranted = rememberNotificationAccessGranted()
 
     // Odak bitince o seansın özetine git; ViewModel aynı seans için yalnızca bir kez önerir.
     LaunchedEffect(pendingDigest) {
@@ -83,6 +87,8 @@ fun TimerRoute(
         onCancelFocus = viewModel::cancelFocus,
         onStartBreak = viewModel::startBreak,
         onSkipBreak = viewModel::skipBreak,
+        notificationAccessGranted = accessGranted,
+        onOpenNotificationAccess = { NotificationListenerAccess.openSettings(context) },
         modifier = modifier,
     )
 }
@@ -95,6 +101,8 @@ fun TimerScreen(
     onStartBreak: () -> Unit,
     onSkipBreak: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationAccessGranted: Boolean = true,
+    onOpenNotificationAccess: () -> Unit = {},
 ) {
     val phaseLabel = when (state.phase) {
         TimerPhase.IDLE -> stringResource(R.string.phase_idle)
@@ -109,73 +117,84 @@ fun TimerScreen(
     }
     val ringDescription = stringResource(R.string.timer_content_description, phaseLabel, timeText)
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = phaseLabel,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.testTag(TAG_PHASE),
-        )
-        Spacer(Modifier.height(24.dp))
-
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(280.dp)
-                .semantics(mergeDescendants = true) { contentDescription = ringDescription },
-        ) {
-            CircularProgressIndicator(
-                progress = { state.progress },
-                modifier = Modifier.fillMaxSize(),
-                strokeWidth = 12.dp,
-                strokeCap = StrokeCap.Round,
-            )
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.displayLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag(TAG_TIME),
+    Box(modifier = modifier.fillMaxSize()) {
+        // Uyarı yalnızca yakalamanın anlamlı olduğu fazlarda (boşta, odak) ve sayacı kaydırmadan üstte durur.
+        if (!notificationAccessGranted && (state.phase == TimerPhase.IDLE || state.phase == TimerPhase.FOCUS)) {
+            NotificationAccessCard(
+                onOpenSettings = onOpenNotificationAccess,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
             )
         }
-        Spacer(Modifier.height(32.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = phaseLabel,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.testTag(TAG_PHASE),
+            )
+            Spacer(Modifier.height(24.dp))
 
-        when (state.phase) {
-            TimerPhase.IDLE -> Button(
-                onClick = onStartFocus,
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TAG_START_FOCUS),
-            ) { Text(stringResource(R.string.action_start_focus)) }
+                    .size(280.dp)
+                    .semantics(mergeDescendants = true) { contentDescription = ringDescription },
+            ) {
+                CircularProgressIndicator(
+                    progress = { state.progress },
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 12.dp,
+                    strokeCap = StrokeCap.Round,
+                )
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.displayLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.testTag(TAG_TIME),
+                )
+            }
+            Spacer(Modifier.height(32.dp))
 
-            TimerPhase.FOCUS -> OutlinedButton(
-                onClick = onCancelFocus,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TAG_CANCEL),
-            ) { Text(stringResource(R.string.action_cancel)) }
-
-            TimerPhase.BREAK_PENDING -> {
-                Button(
-                    onClick = onStartBreak,
+            when (state.phase) {
+                TimerPhase.IDLE -> Button(
+                    onClick = onStartFocus,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag(TAG_START_BREAK),
-                ) { Text(stringResource(R.string.action_start_break)) }
-                TextButton(
+                        .testTag(TAG_START_FOCUS),
+                ) { Text(stringResource(R.string.action_start_focus)) }
+
+                TimerPhase.FOCUS -> OutlinedButton(
+                    onClick = onCancelFocus,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TAG_CANCEL),
+                ) { Text(stringResource(R.string.action_cancel)) }
+
+                TimerPhase.BREAK_PENDING -> {
+                    Button(
+                        onClick = onStartBreak,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(TAG_START_BREAK),
+                    ) { Text(stringResource(R.string.action_start_break)) }
+                    TextButton(
+                        onClick = onSkipBreak,
+                        modifier = Modifier.testTag(TAG_SKIP),
+                    ) { Text(stringResource(R.string.action_skip_break)) }
+                }
+
+                TimerPhase.BREAK -> TextButton(
                     onClick = onSkipBreak,
                     modifier = Modifier.testTag(TAG_SKIP),
                 ) { Text(stringResource(R.string.action_skip_break)) }
             }
-
-            TimerPhase.BREAK -> TextButton(
-                onClick = onSkipBreak,
-                modifier = Modifier.testTag(TAG_SKIP),
-            ) { Text(stringResource(R.string.action_skip_break)) }
         }
     }
 }

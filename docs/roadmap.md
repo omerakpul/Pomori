@@ -37,7 +37,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] `GetDigest` use case, `DigestViewModel`
 - [x] `DigestScreen`: uygulama bazlı genişleyen liste, boş durum ekranı
 - [x] Seans bitişinde özet ekranına yönlendirme
-- [ ] İzin verilmediğinde zarif davranış (uygulama çalışır, özet boş, uyarı kartı görünür)
+- [x] İzin verilmediğinde zarif davranış (uygulama çalışır, özet boş, uyarı kartı görünür)
 
 **Bitti sayılır:** WhatsApp/Gmail gibi gerçek uygulamalardan gelen bildirimler özette doğru gruplanıyor.
 
