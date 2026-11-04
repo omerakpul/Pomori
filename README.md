@@ -1,43 +1,54 @@
 # Pomori - Pomodoro App
 
-Odak (pomodoro) seansı sırasında gelen bildirimleri sessizce yakalayan, mola başlayınca uygulama bazında gruplanmış bir özet sunan Android uygulaması.
+An Android Pomodoro timer that silently captures notifications during a focus session and, when your break starts, shows what you missed as a digest grouped by app.
 
-> Durum: geliştirme aşamasında. Yol haritası: [docs/roadmap.md](docs/roadmap.md)
+> Status: in development. Roadmap: [docs/roadmap.md](docs/roadmap.md) (in Turkish)
 
-## Problem ve çözüm
-Odaklanmaya çalışırken telefona düşen her bildirim dikkati böler; bildirimleri tamamen kapatmak ise önemli bir şeyi kaçırma kaygısı yaratır. Pomori, odak seansı boyunca gelen bildirimleri sessizce yakalar ve sistemden kaldırır, sen çalışmaya devam edersin. Mola başladığında kaçırdıkların uygulama bazında gruplanmış tek bir özette karşına çıkar. Acil olması gereken uygulamaları istisna listesine ekleyerek onların bildirimlerinin hiç engellenmemesini sağlayabilirsin.
+## Problem and solution
+Every notification that lands while you are trying to focus breaks your attention, but turning notifications off completely creates the worry of missing something important. Pomori captures incoming notifications quietly during a focus session and removes them from the shade, so you can keep working. When the break starts, everything you missed appears in a single digest grouped by app. Apps that must always get through can be added to an exception list so their notifications are never blocked.
 
-## Ekran görüntüleri
-_(Eklenecek)_
+## Features
+- Focus and break timer with short and long breaks, driven by an end timestamp so it survives process death
+- Duration presets (modes) with their own focus, break and long-break lengths
+- Notification digest grouped by app, with notifications restored to the shade after the session (optional)
+- Exception list by app or sender
+- Interruption counter: tap "Kesinti" during a focus session to log a distraction; the timer keeps running
+- Optional session label, with a per-label breakdown in the stats
+- Daily focus goal with a streak counter
+- Weekly stats: focus time, completed sessions, daily chart, top distracting apps
+- Dark theme and accessibility support
 
-## Mimari
-Katmanlı yapı: **ui → domain ← data**, Android'e özgü kod `platform` paketinde. Ayrıntılar: [docs/architecture.md](docs/architecture.md)
+## Screenshots
+_(To be added)_
 
-## Zor kararlar
-- Sayaç tasarımı (bitiş-zamanı tabanlı)
-- Bildirim erişimi ve izin deneyimi
-- Test edilebilirlik (saf Kotlin domain katmanı)
+## Architecture
+Layered structure: **ui → domain ← data**, with Android-specific code in the `platform` package. Details: [docs/architecture.md](docs/architecture.md) (in Turkish)
 
-## Bilinen kısıtlar ve gizlilik
-- Bildirim verisi yalnızca cihazda tutulur, ağa gönderilmez (internet izni yok).
-- Yakalanan bildirimler sistemden kaldırıldığı için özetten orijinal sohbete doğrudan gidilemez.
-- Bildirim erişimi hassas bir izin olduğundan APK olarak GitHub Releases'te dağıtılır.
+## Key design decisions
+- Timer design (end-timestamp based, not a decrementing counter)
+- Notification access and the permission experience
+- Testability (a pure Kotlin domain layer)
 
-## Kurulum
-1. [Releases](https://github.com/omerakpul/pomori/releases) sayfasından en son `pomori-vX.Y.apk` dosyasını indir (`debug-latest` ön sürümü imzasızdır, yalnızca test içindir).
-2. Telefonda APK'yı aç; istenirse tarayıcın veya dosya yöneticin için "bilinmeyen kaynaklardan yükleme" iznini ver.
-3. İlk açılışta bildirim erişimi izni istenir: Ayarlar > Bildirim erişimi ekranında Pomori'yi aç. İzin vermezsen uygulama çalışır ama özet boş kalır.
+## Known limitations and privacy
+- Notification data stays on the device and is never sent over the network (the app has no internet permission).
+- Captured notifications are removed from the system, so the digest cannot jump straight back to the original conversation.
+- Because notification access is a sensitive permission, the app is distributed as an APK on GitHub Releases.
 
-Gereksinim: Android 8.0 (API 26) ve üzeri.
+## Installation
+1. Download the latest `pomori-vX.Y.apk` from the [Releases](https://github.com/omerakpul/pomori/releases) page (the `debug-latest` pre-release is unsigned and meant for testing only).
+2. Open the APK on your phone; if asked, allow installing from unknown sources for your browser or file manager.
+3. On first launch the app asks for notification access: turn Pomori on under Settings > Notification access. Without it the app still works, but the digest stays empty.
 
-### Kaynaktan imzalı sürüm üretme
-Repo içinde imza anahtarı yoktur. Kendi anahtarınla:
+Requirements: Android 8.0 (API 26) or newer.
+
+### Building a signed release from source
+The repository contains no signing key. With your own key:
 
 ```
 keytool -genkeypair -keystore pomori-release.jks -alias pomori -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Kök dizine `keystore.properties` dosyası ekle (git tarafından yok sayılır):
+Add a `keystore.properties` file in the project root (ignored by git):
 
 ```
 storeFile=pomori-release.jks
@@ -46,12 +57,12 @@ keyAlias=pomori
 keyPassword=...
 ```
 
-Sonra `./gradlew assembleRelease` imzalı APK'yı `app/build/outputs/apk/release/` altına yazar. Dosya yoksa release derlemesi imzasız çıkar. CI'da aynı değerler `POMORI_KEYSTORE_FILE`, `POMORI_KEYSTORE_PASSWORD`, `POMORI_KEY_ALIAS`, `POMORI_KEY_PASSWORD` ortam değişkenleriyle verilir.
+Then `./gradlew assembleRelease` writes the signed APK to `app/build/outputs/apk/release/`. Without the file, the release build comes out unsigned. In CI the same values are passed as the environment variables `POMORI_KEYSTORE_FILE`, `POMORI_KEYSTORE_PASSWORD`, `POMORI_KEY_ALIAS` and `POMORI_KEY_PASSWORD`.
 
-## Testler
+## Tests
 ```
 ./gradlew test
 ```
 
-## Teknoloji
+## Tech stack
 Kotlin, Jetpack Compose (Material 3), Hilt, Room, DataStore, Coroutines/Flow, WorkManager, NotificationListenerService, Foreground Service.
