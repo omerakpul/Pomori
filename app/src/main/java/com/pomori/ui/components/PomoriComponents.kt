@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -30,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,20 +73,21 @@ fun ScreenHeader(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, end = 20.dp)) {
+    val configuration = LocalConfiguration.current
+    val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+    val backButton: @Composable () -> Unit = {
         IconButton(onClick = onBack, modifier = Modifier.testTag(backTag)) {
             Icon(
                 painter = painterResource(R.drawable.ic_arrow_back),
                 contentDescription = stringResource(R.string.action_back),
             )
         }
-        Column(
-            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
+    }
+    val titles: @Composable (Modifier) -> Unit = { titleModifier ->
+        Column(modifier = titleModifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineLarge,
+                style = if (landscape) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.semantics { heading() },
             )
             if (subtitle != null) {
@@ -93,6 +97,21 @@ fun ScreenHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+    if (landscape) {
+        // Yatayda dikey alan kıt: geri düğmesi ve başlık aynı satırda durur, liste daha çok yer bulur.
+        Row(
+            modifier = modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, end = 20.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            backButton()
+            titles(Modifier.padding(start = 4.dp))
+        }
+    } else {
+        Column(modifier = modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, end = 20.dp)) {
+            backButton()
+            titles(Modifier.padding(start = 12.dp, top = 8.dp, bottom = 12.dp))
         }
     }
 }
@@ -296,5 +315,13 @@ fun StepperRow(
                     .testTag("${tag}_inc"),
             ) { Icon(painterResource(R.drawable.ic_add), contentDescription = null) }
         }
+    }
+}
+
+/** Geniş (yatay, tablet) ekranlarda liste ekranlarının satırları uçtan uca uzamasın: içerik ortalanır ve sınırlanır. */
+@Composable
+fun ContentWidthLimit(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Box(modifier = Modifier.widthIn(max = 640.dp).fillMaxHeight()) { content() }
     }
 }

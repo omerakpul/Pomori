@@ -69,6 +69,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -215,69 +216,20 @@ fun TimerScreen(
         }
 
         // Sığıyorsa ortalanır, sığmıyorsa (büyük yazı tipi, küçük ekran) kaydırılır: hiçbir düğme kesilmez.
+        // Yatayda yükseklik kısıtlıdır: kadran solda, faz bilgisi ve düğmeler sağda yan yana durur.
         BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = maxHeight)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = phaseLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = accent,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.testTag(TAG_PHASE),
+            val availableHeight = maxHeight
+            val landscape = maxWidth > availableHeight
+            val dial: @Composable (Dp) -> Unit = { size ->
+                TimerDial(
+                    state = state,
+                    timeText = timeText,
+                    ringDescription = ringDescription,
+                    accent = accent,
+                    size = size,
                 )
-                Spacer(Modifier.height(14.dp))
-                CycleDots(filled = state.cycleFilled, total = state.cycleLength, accent = accent)
-                Spacer(Modifier.height(20.dp))
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(280.dp)
-                        .semantics(mergeDescendants = true) { contentDescription = ringDescription },
-                ) {
-                    DialRing(progress = state.progress, color = accent, modifier = Modifier.fillMaxSize())
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (state.phase == TimerPhase.BREAK_PENDING) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_coffee),
-                                contentDescription = null,
-                                tint = accent,
-                                modifier = Modifier
-                                    .padding(bottom = 8.dp)
-                                    .size(32.dp),
-                            )
-                        }
-                        Text(
-                            text = timeText,
-                            // Rakamlar büyük, ama "Mola zamanı" gibi bir kelime kadrana sığmak için daha küçük yazılır.
-                            style = if (state.phase == TimerPhase.BREAK_PENDING) {
-                                MaterialTheme.typography.headlineMedium
-                            } else {
-                                TimerDigitsStyle
-                            },
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            modifier = Modifier.testTag(TAG_TIME),
-                        )
-                        sessionCaption(state)?.let { caption ->
-                            Text(
-                                text = caption,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(40.dp))
-
+            }
+            val controls: @Composable (Boolean) -> Unit = { showHint ->
                 TimerActions(
                     phase = state.phase,
                     isLongBreak = state.isLongBreak,
@@ -290,14 +242,122 @@ fun TimerScreen(
                     interruptions = state.interruptions,
                     onInterrupt = onInterrupt,
                 )
-                Spacer(Modifier.height(20.dp))
-
+                // Yatayda yükseklik dardır: ipucu yer açmak için gizlenir.
+                if (showHint) {
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        text = hintText(state),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 300.dp),
+                    )
+                }
+            }
+            val phaseHeader: @Composable () -> Unit = {
                 Text(
-                    text = hintText(state),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = phaseLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = accent,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.testTag(TAG_PHASE),
+                )
+                Spacer(Modifier.height(14.dp))
+                CycleDots(filled = state.cycleFilled, total = state.cycleLength, accent = accent)
+            }
+
+            if (landscape) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Kadran, mevcut yüksekliğe sığacak kadar küçülür (en fazla 280 dp).
+                    dial((availableHeight - 16.dp).coerceIn(160.dp, DIAL_SIZE))
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .widthIn(max = 360.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        phaseHeader()
+                        Spacer(Modifier.height(20.dp))
+                        controls(false)
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = availableHeight)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    phaseHeader()
+                    Spacer(Modifier.height(20.dp))
+                    dial(DIAL_SIZE)
+                    Spacer(Modifier.height(40.dp))
+                    controls(true)
+                }
+            }
+        }
+    }
+}
+
+private val DIAL_SIZE = 280.dp
+
+/** Dairesel kadran: ilerleme halkası, kalan süre ve alt yazı. Boyut parametredir; yatayda küçülür. */
+@Composable
+private fun TimerDial(
+    state: TimerUiState,
+    timeText: String,
+    ringDescription: String,
+    accent: Color,
+    size: Dp,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(size)
+            .semantics(mergeDescendants = true) { contentDescription = ringDescription },
+    ) {
+        DialRing(progress = state.progress, color = accent, modifier = Modifier.fillMaxSize())
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (state.phase == TimerPhase.BREAK_PENDING) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_coffee),
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .size(32.dp),
+                )
+            }
+            Text(
+                text = timeText,
+                // Rakamlar büyük, ama "Mola zamanı" gibi bir kelime kadrana sığmak için daha küçük yazılır.
+                style = if (state.phase == TimerPhase.BREAK_PENDING) {
+                    MaterialTheme.typography.headlineMedium
+                } else {
+                    // Kadran küçüldüğünde rakamlar da orantılı küçülür; halkaya taşmaz.
+                    TimerDigitsStyle.copy(fontSize = TimerDigitsStyle.fontSize * (size / DIAL_SIZE).coerceAtMost(1f))
+                },
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.testTag(TAG_TIME),
+            )
+            sessionCaption(state)?.let { caption ->
+                Text(
+                    text = caption,
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.widthIn(max = 300.dp),
                 )
             }
         }

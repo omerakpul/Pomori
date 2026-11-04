@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.pomori.ui.components.ContentWidthLimit
 import com.pomori.ui.digest.DigestRoute
 import com.pomori.ui.digest.DigestViewModel
 import com.pomori.ui.presets.PresetsRoute
@@ -40,23 +41,25 @@ fun PomoriNavHost(modifier: Modifier = Modifier) {
             )
         }
         composable(Routes.SETTINGS) {
-            SettingsRoute(
-                onBack = { navController.popBackStack() },
-                onOpenPresets = { navController.navigate(Routes.PRESETS) },
-            )
+            ContentWidthLimit {
+                SettingsRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenPresets = { navController.navigate(Routes.PRESETS) },
+                )
+            }
         }
         composable(Routes.PRESETS) {
-            PresetsRoute(onBack = { navController.popBackStack() })
+            ContentWidthLimit { PresetsRoute(onBack = { navController.popBackStack() }) }
         }
         composable(Routes.STATS) {
-            StatsRoute(onBack = { navController.popBackStack() })
+            ContentWidthLimit { StatsRoute(onBack = { navController.popBackStack() }) }
         }
         composable(
             route = Routes.DIGEST,
             arguments = listOf(navArgument(DigestViewModel.ARG_SESSION_ID) { type = NavType.LongType }),
         ) {
             // Kapatınca (ya da geri tuşuyla) sayaca döner; mola başlatma/atlama düğmeleri orada.
-            DigestRoute(onClose = { navController.popBackStack() })
+            ContentWidthLimit { DigestRoute(onClose = { navController.popBackStack() }) }
         }
     }
 }
