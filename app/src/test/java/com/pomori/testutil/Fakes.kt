@@ -4,6 +4,7 @@ import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.repository.ActiveSessionStore
 import com.pomori.domain.repository.SessionRepository
+import com.pomori.domain.repository.SettingsStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -35,5 +36,15 @@ class FakeActiveSessionStore(initial: ActiveSession? = null) : ActiveSessionStor
 
     override suspend fun clear() {
         state.value = null
+    }
+}
+
+class FakeSettingsStore(initialOnboardingDone: Boolean = false) : SettingsStore {
+    private val done = MutableStateFlow(initialOnboardingDone)
+
+    override val onboardingDone: Flow<Boolean> = done
+
+    override suspend fun setOnboardingDone() {
+        done.value = true
     }
 }

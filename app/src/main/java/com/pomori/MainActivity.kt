@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.pomori.ui.theme.PomoriTheme
-import com.pomori.ui.timer.TimerRoute
+import com.pomori.ui.PomoriRoot
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PomoriTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    TimerRoute(modifier = Modifier.padding(innerPadding))
+                    PomoriRoot(modifier = Modifier.padding(innerPadding))
                 }
             }
         }

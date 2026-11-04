@@ -21,7 +21,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] `TimerScreen` (Compose): dairesel ilerleme, başlat/iptal düğmeleri
 - [x] `FocusForegroundService` + kalıcı bildirim (kalan süre)
 - [x] `POST_NOTIFICATIONS` izin akışı (Android 13+)
-- [ ] Manuel test: uygulamayı son uygulamalardan kapat, tekrar aç, süre doğru mu?
+- [x] Manuel test: uygulamayı son uygulamalardan kapat, tekrar aç, süre doğru mu?
 - [x] Seans bitişinde bildirim/ses
 
 **Bitti sayılır:** Unit testler yeşil, gerçek cihazda süreç öldürme testi geçti.
@@ -29,7 +29,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 ## Hafta 2: Bildirim yakalama ve özet
 **Hedef:** Seans sırasında bildirimleri tut, mola başlayınca özet göster.
 
-- [ ] Onboarding ekranı: neden bildirim erişimi istiyoruz, hangi veriyi saklıyoruz
+- [x] Onboarding ekranı: neden bildirim erişimi istiyoruz, hangi veriyi saklıyoruz
 - [ ] Bildirim erişim iznini kontrol eden yardımcı ve ayarlara yönlendirme
 - [ ] `CapturedNotificationEntity`, DAO, repository
 - [ ] `FocusNotificationListener`: filtreleme (ongoing, grup özeti, kendi uygulaması), kaydetme, `cancelNotification`

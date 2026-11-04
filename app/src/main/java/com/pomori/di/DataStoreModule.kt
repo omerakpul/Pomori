@@ -23,4 +23,12 @@ object DataStoreModule {
         PreferenceDataStoreFactory.create(
             produceFile = { context.preferencesDataStoreFile("active_session") },
         )
+
+    @Provides
+    @Singleton
+    @SettingsPrefs
+    fun provideSettingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+            produceFile = { context.preferencesDataStoreFile("settings") },
+        )
 }
