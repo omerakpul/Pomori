@@ -1,0 +1,263 @@
+package com.pomori.ui.settings
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.pomori.R
+import com.pomori.domain.model.ExceptionRule
+import com.pomori.domain.model.InstalledApp
+import com.pomori.ui.pomoriComposeRule
+import com.pomori.ui.str
+import com.pomori.ui.theme.PomoriTheme
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class SettingsScreenTest {
+
+    @get:Rule
+    val rule = pomoriComposeRule()
+
+    private val calls = mutableListOf<String>()
+
+    private val apps = listOf(
+        InstalledApp("com.google.android.gm", "Gmail"),
+        InstalledApp("com.whatsapp", "WhatsApp"),
+    )
+
+    private fun show(state: SettingsUiState = SettingsUiState(selectableApps = apps)) {
+        rule.setContent {
+            PomoriTheme {
+                SettingsScreen(
+                    state = state,
+                    onFocusMinutesChange = { calls += "focus:$it" },
+                    onBreakMinutesChange = { calls += "break:$it" },
+                    onRetentionDaysChange = { calls += "retention:$it" },
+                    onAddSender = { calls += "sender:$it" },
+                    onAddApp = { calls += "app:${it.packageName}" },
+                    onRemoveRule = { calls += "remove:${it.value}" },
+                    onBack = { calls += "back" },
+                )
+            }
+        }
+    }
+
+    /** Liste tembel çizildiği için ekran dışındaki öğeye önce kaydırılır. */
+    private fun scrollTo(tag: String) {
+        rule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag(tag))
+    }
+
+    // --- süreler ---
+
+    @Test
+    fun showsTheCurrentValues() {
+        show(SettingsUiState(focusMinutes = 40, breakMinutes = 8, retentionDays = 14))
+
+        rule.onNodeWithTag("settings_focus_value").assertTextEquals(rule.str(R.string.settings_minutes_format, 40))
+        rule.onNodeWithTag("settings_break_value").assertTextEquals(rule.str(R.string.settings_minutes_format, 8))
+        rule.onNodeWithTag("settings_retention_value").assertTextEquals(rule.str(R.string.settings_days_format, 14))
+    }
+
+    @Test
+    fun focusDuration_changesInStepsOfFiveMinutes() {
+        show(SettingsUiState(focusMinutes = 25))
+
+        rule.onNodeWithTag("settings_focus_inc").performClick()
+        rule.onNodeWithTag("settings_focus_dec").performClick()
+
+        assertEquals(listOf("focus:30", "focus:20"), calls)
+    }
+
+    @Test
+    fun breakDuration_changesInStepsOfOneMinute() {
+        show(SettingsUiState(breakMinutes = 5))
+
+        rule.onNodeWithTag("settings_break_inc").performClick()
+        rule.onNodeWithTag("settings_break_dec").performClick()
+
+        assertEquals(listOf("break:6", "break:4"), calls)
+    }
+
+    @Test
+    fun retention_changesInStepsOfOneDay() {
+        show(SettingsUiState(retentionDays = 7))
+
+        rule.onNodeWithTag("settings_retention_inc").performClick()
+        rule.onNodeWithTag("settings_retention_dec").performClick()
+
+        assertEquals(listOf("retention:8", "retention:6"), calls)
+    }
+
+    @Test
+    fun theLowerLimits_disableTheDecreaseButtons() {
+        show(SettingsUiState(focusMinutes = 1, breakMinutes = 1, retentionDays = 1))
+
+        rule.onNodeWithTag("settings_focus_dec").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_break_dec").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_retention_dec").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_focus_inc").assertIsEnabled()
+    }
+
+    @Test
+    fun theUpperLimits_disableTheIncreaseButtons() {
+        show(SettingsUiState(focusMinutes = 120, breakMinutes = 60, retentionDays = 30))
+
+        rule.onNodeWithTag("settings_focus_inc").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_break_inc").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_retention_inc").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_focus_dec").assertIsEnabled()
+    }
+
+    @Test
+    fun aDisabledButton_doesNotReportAChange() {
+        show(SettingsUiState(focusMinutes = 1))
+
+        rule.onNodeWithTag("settings_focus_dec").performClick()
+
+        assertEquals(emptyList<String>(), calls)
+    }
+
+    @Test
+    fun backButton_goesBack() {
+        show()
+
+        rule.onNodeWithTag("settings_back").performClick()
+
+        assertEquals(listOf("back"), calls)
+    }
+
+    // --- istisna listesi ---
+
+    @Test
+    fun withoutRules_showsTheEmptyHint() {
+        show()
+        scrollTo("settings_rules_empty")
+
+        rule.onNodeWithTag("settings_rules_empty").assertIsDisplayed()
+    }
+
+    @Test
+    fun rules_areListedWithTheirNameAndType() {
+        show(
+            SettingsUiState(
+                rules = listOf(
+                    RuleItem(ExceptionRule.Package("com.whatsapp"), "WhatsApp"),
+                    RuleItem(ExceptionRule.Sender("Anne"), "Anne"),
+                ),
+            ),
+        )
+
+        rule.onNodeWithText("WhatsApp").assertIsDisplayed()
+        rule.onNodeWithText(rule.str(R.string.settings_rule_type_app)).assertIsDisplayed()
+        rule.onNodeWithText("Anne").assertIsDisplayed()
+        rule.onNodeWithText(rule.str(R.string.settings_rule_type_sender)).assertIsDisplayed()
+        rule.onNodeWithTag("settings_rules_empty").assertDoesNotExist()
+    }
+
+    @Test
+    fun removeButton_reportsTheRuleToRemove() {
+        show(SettingsUiState(rules = listOf(RuleItem(ExceptionRule.Sender("Anne"), "Anne"))))
+
+        rule.onNodeWithTag("settings_remove_Anne").performClick()
+
+        assertEquals(listOf("remove:Anne"), calls)
+    }
+
+    // --- gönderen ekleme ---
+
+    @Test
+    fun addSender_isDisabledUntilSomethingIsTyped() {
+        show()
+        scrollTo("settings_sender_add")
+
+        rule.onNodeWithTag("settings_sender_add").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_sender_input").performTextInput("   ")
+        rule.onNodeWithTag("settings_sender_add").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_sender_input").performTextInput("Anne")
+        rule.onNodeWithTag("settings_sender_add").assertIsEnabled()
+    }
+
+    @Test
+    fun addSender_reportsTheNameAndClearsTheField() {
+        show()
+        scrollTo("settings_sender_add")
+
+        rule.onNodeWithTag("settings_sender_input").performTextInput("Anne")
+        rule.onNodeWithTag("settings_sender_add").performClick()
+
+        assertEquals(listOf("sender:Anne"), calls)
+        // Alan temizlendi: boş olduğu için düğme yeniden pasif.
+        rule.onNodeWithTag("settings_sender_add").assertIsNotEnabled()
+    }
+
+    // --- uygulama seçici ---
+
+    @Test
+    fun appPicker_listsTheSelectableApps() {
+        show()
+        scrollTo("settings_add_app")
+
+        rule.onNodeWithTag("settings_add_app").performClick()
+
+        rule.onNodeWithText(rule.str(R.string.settings_pick_app_title)).assertIsDisplayed()
+        rule.onNodeWithTag("settings_app_com.whatsapp").assertIsDisplayed()
+        rule.onNodeWithTag("settings_app_com.google.android.gm").assertIsDisplayed()
+    }
+
+    @Test
+    fun appPicker_searchFiltersIgnoringCase() {
+        show()
+        scrollTo("settings_add_app")
+        rule.onNodeWithTag("settings_add_app").performClick()
+
+        rule.onNodeWithTag("settings_app_search").performTextInput("WHATS")
+
+        rule.onNodeWithTag("settings_app_com.whatsapp").assertIsDisplayed()
+        rule.onNodeWithTag("settings_app_com.google.android.gm").assertDoesNotExist()
+    }
+
+    @Test
+    fun appPicker_saysSoWhenNothingMatches() {
+        show()
+        scrollTo("settings_add_app")
+        rule.onNodeWithTag("settings_add_app").performClick()
+
+        rule.onNodeWithTag("settings_app_search").performTextInput("zzz")
+
+        rule.onNodeWithText(rule.str(R.string.settings_pick_app_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun appPicker_pickingAnAppReportsItAndClosesTheDialog() {
+        show()
+        scrollTo("settings_add_app")
+        rule.onNodeWithTag("settings_add_app").performClick()
+
+        rule.onNodeWithTag("settings_app_com.whatsapp").performClick()
+
+        assertEquals(listOf("app:com.whatsapp"), calls)
+        rule.onNodeWithText(rule.str(R.string.settings_pick_app_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun appPicker_canBeClosedWithoutPicking() {
+        show()
+        scrollTo("settings_add_app")
+        rule.onNodeWithTag("settings_add_app").performClick()
+
+        rule.onNodeWithText(rule.str(R.string.settings_close)).performClick()
+
+        assertEquals(emptyList<String>(), calls)
+        rule.onNodeWithText(rule.str(R.string.settings_pick_app_title)).assertDoesNotExist()
+    }
+}
