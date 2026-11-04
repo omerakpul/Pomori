@@ -3,6 +3,7 @@ package com.pomori.ui.settings
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -57,27 +60,22 @@ import com.pomori.ui.components.InitialAvatar
 import com.pomori.ui.components.ScreenHeader
 import com.pomori.ui.components.SectionHeader
 import com.pomori.ui.components.SoftCard
+import com.pomori.ui.components.StepperRow
 import com.pomori.ui.theme.PomoriTheme
-
-/** Odak süresi 5'er dakika, mola ve saklama süresi 1'er birim değişir. */
-private const val FOCUS_STEP = 5
-
-/** Erişilebilirlik için dokunma hedefi en az 48 dp olmalıdır. */
-private val TOUCH_TARGET = 48.dp
 
 @Composable
 fun SettingsRoute(
     onBack: () -> Unit,
+    onOpenPresets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
         state = state,
-        onFocusMinutesChange = viewModel::setFocusMinutes,
-        onBreakMinutesChange = viewModel::setBreakMinutes,
-        onLongBreakMinutesChange = viewModel::setLongBreakMinutes,
+        onOpenPresets = onOpenPresets,
         onRetentionDaysChange = viewModel::setRetentionDays,
+        onRestoreNotificationsChange = viewModel::setRestoreNotifications,
         onAddSender = viewModel::addSender,
         onAddApp = viewModel::addApp,
         onRemoveRule = viewModel::removeRule,
@@ -89,15 +87,14 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
-    onFocusMinutesChange: (Int) -> Unit,
-    onBreakMinutesChange: (Int) -> Unit,
     onRetentionDaysChange: (Int) -> Unit,
     onAddSender: (String) -> Unit,
     onAddApp: (InstalledApp) -> Unit,
     onRemoveRule: (ExceptionRule) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    onLongBreakMinutesChange: (Int) -> Unit = {},
+    onOpenPresets: () -> Unit = {},
+    onRestoreNotificationsChange: (Boolean) -> Unit = {},
 ) {
     var showAppPicker by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
@@ -118,51 +115,75 @@ fun SettingsScreen(
             )
         }
 
-        item { SectionHeader(stringResource(R.string.settings_section_durations), Modifier.padding(horizontal = 16.dp)) }
+        item { SectionHeader(stringResource(R.string.settings_section_presets), Modifier.padding(horizontal = 16.dp)) }
+        item {
+            // Süreler artık modlarda ("Ders" 40/5/15, "Kodlama" 25/5/15...). Burası modlar ekranının kapısı.
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button, onClick = onOpenPresets)
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .testTag("settings_presets"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconBadge(icon = R.drawable.ic_schedule, tint = scheme.primary)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = stringResource(R.string.settings_presets_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.settings_presets_summary,
+                                state.presetCount,
+                                state.selectedPresetName ?: "-",
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("settings_presets_summary"),
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_right),
+                        contentDescription = null,
+                        tint = scheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.settings_section_notifications), Modifier.padding(horizontal = 16.dp)) }
         item {
             SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Column(Modifier.padding(vertical = 4.dp)) {
-                    StepperRow(
-                        icon = R.drawable.ic_schedule,
-                        tint = scheme.primary,
-                        label = stringResource(R.string.settings_focus_duration),
-                        valueText = stringResource(R.string.settings_minutes_format, state.focusMinutes),
-                        canDecrement = state.focusMinutes > SettingsDefaults.FOCUS_RANGE.first,
-                        canIncrement = state.focusMinutes < SettingsDefaults.FOCUS_RANGE.last,
-                        onDecrement = { onFocusMinutesChange(state.focusMinutes - FOCUS_STEP) },
-                        onIncrement = { onFocusMinutesChange(state.focusMinutes + FOCUS_STEP) },
-                        tag = "settings_focus",
-                    )
-                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = scheme.outlineVariant)
-                    StepperRow(
-                        icon = R.drawable.ic_coffee,
-                        tint = scheme.secondary,
-                        label = stringResource(R.string.settings_break_duration),
-                        valueText = stringResource(R.string.settings_minutes_format, state.breakMinutes),
-                        canDecrement = state.breakMinutes > SettingsDefaults.BREAK_RANGE.first,
-                        canIncrement = state.breakMinutes < SettingsDefaults.BREAK_RANGE.last,
-                        onDecrement = { onBreakMinutesChange(state.breakMinutes - 1) },
-                        onIncrement = { onBreakMinutesChange(state.breakMinutes + 1) },
-                        tag = "settings_break",
-                    )
-                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = scheme.outlineVariant)
-                    StepperRow(
-                        icon = R.drawable.ic_coffee,
-                        tint = scheme.secondary,
-                        label = stringResource(R.string.settings_long_break_duration),
-                        valueText = stringResource(R.string.settings_minutes_format, state.longBreakMinutes),
-                        canDecrement = state.longBreakMinutes > SettingsDefaults.LONG_BREAK_RANGE.first,
-                        canIncrement = state.longBreakMinutes < SettingsDefaults.LONG_BREAK_RANGE.last,
-                        onDecrement = { onLongBreakMinutesChange(state.longBreakMinutes - FOCUS_STEP) },
-                        onIncrement = { onLongBreakMinutesChange(state.longBreakMinutes + FOCUS_STEP) },
-                        tag = "settings_long_break",
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_long_break_hint, SettingsDefaults.LONG_BREAK_EVERY),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = scheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                    )
+                // Tüm satır tek bir anahtar: etiket de dokunma hedefi, ekran okuyucu "açık/kapalı" olarak okur.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = state.restoreNotifications,
+                            role = Role.Switch,
+                            onValueChange = onRestoreNotificationsChange,
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                        .testTag("settings_restore"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconBadge(icon = R.drawable.ic_notifications, tint = scheme.tertiary)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = stringResource(R.string.settings_restore_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_restore_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = state.restoreNotifications, onCheckedChange = null)
                 }
             }
         }
@@ -241,67 +262,6 @@ fun SettingsScreen(
             },
             onDismiss = { showAppPicker = false },
         )
-    }
-}
-
-@Composable
-private fun StepperRow(
-    @DrawableRes icon: Int,
-    tint: Color,
-    label: String,
-    valueText: String,
-    canDecrement: Boolean,
-    canIncrement: Boolean,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    tag: String,
-) {
-    val decreaseDescription = stringResource(R.string.settings_decrease, label)
-    val increaseDescription = stringResource(R.string.settings_increase, label)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        IconBadge(icon = icon, tint = tint)
-        Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        // Tek parça "segment" kontrol: [ - | değer | + ]. Üç ayrı daire düğmeden çok daha derli toplu.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp)),
-        ) {
-            IconButton(
-                onClick = onDecrement,
-                enabled = canDecrement,
-                modifier = Modifier
-                    .size(TOUCH_TARGET)
-                    .semantics { contentDescription = decreaseDescription }
-                    .testTag("${tag}_dec"),
-            ) { Icon(painterResource(R.drawable.ic_remove), contentDescription = null) }
-            Text(
-                text = valueText,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                // Tek satır: büyük yazı tipinde "25 dk" ikiye bölünmez, bunun yerine etiket daralır.
-                maxLines = 1,
-                softWrap = false,
-                // En az genişlik: normal boyutta "5 dk" ve "25 dk" aynı yeri kaplar, düğmeler satırlar arasında
-                // hizalı kalır; büyük yazı tipinde değer gerektiği kadar genişler.
-                modifier = Modifier
-                    .widthIn(min = 56.dp)
-                    .testTag("${tag}_value"),
-            )
-            IconButton(
-                onClick = onIncrement,
-                enabled = canIncrement,
-                modifier = Modifier
-                    .size(TOUCH_TARGET)
-                    .semantics { contentDescription = increaseDescription }
-                    .testTag("${tag}_inc"),
-            ) { Icon(painterResource(R.drawable.ic_add), contentDescription = null) }
-        }
     }
 }
 
@@ -451,16 +411,14 @@ private fun SettingsScreenPreview() {
     PomoriTheme {
         SettingsScreen(
             state = SettingsUiState(
-                focusMinutes = 25,
-                breakMinutes = 5,
+                presetCount = 3,
+                selectedPresetName = "Ders",
                 retentionDays = 7,
                 rules = listOf(
                     RuleItem(ExceptionRule.Package("com.whatsapp"), "WhatsApp"),
                     RuleItem(ExceptionRule.Sender("Anne"), "Anne"),
                 ),
             ),
-            onFocusMinutesChange = {},
-            onBreakMinutesChange = {},
             onRetentionDaysChange = {},
             onAddSender = {},
             onAddApp = {},

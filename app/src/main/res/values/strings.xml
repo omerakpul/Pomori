@@ -55,6 +55,7 @@
     <string name="digest_empty_body_no_access">Bildirim erişimi kapalı olduğu için bu seansta gelen bildirimler yakalanmamış olabilir.</string>
 
     <string name="timer_settings">Ayarlar</string>
+    <string name="timer_presets_edit">Modları düzenle</string>
     <string name="timer_stats">İstatistikler</string>
 
     <string name="stats_title">İstatistikler</string>
@@ -71,12 +72,29 @@
     <string name="stats_empty_title">Henüz veri yok</string>
     <string name="stats_empty_body">Bir odak seansını tamamladığında istatistiklerin burada görünür.</string>
 
+    <string name="presets_title">Modlar</string>
+    <string name="presets_subtitle">Her mod kendi sürelerini kullanır</string>
+    <string name="presets_active">Aktif</string>
+    <string name="presets_summary">%1$d dk odak · %2$d dk mola · %3$d dk uzun mola</string>
+    <string name="presets_add">Yeni mod ekle</string>
+    <string name="preset_editor_new">Yeni mod</string>
+    <string name="preset_editor_edit">Modu düzenle</string>
+    <string name="preset_name_label">Mod adı</string>
+    <string name="preset_save">Kaydet</string>
+    <string name="preset_delete">Modu sil</string>
+    <string name="preset_every_label">Uzun mola sıklığı</string>
+    <string name="preset_every_value">%d seans</string>
+
     <string name="settings_title">Ayarlar</string>
-    <string name="settings_section_durations">Süreler</string>
+    <string name="settings_section_notifications">Bildirimler</string>
+    <string name="settings_restore_title">Seans bitince geri getir</string>
+    <string name="settings_restore_body">Yakalanan bildirimler, seans bitince orijinal uygulamasıyla birlikte bildirim paneline geri düşer. Kapalıysa yalnızca özette görünür.</string>
+    <string name="settings_section_presets">Süre modları</string>
+    <string name="settings_presets_title">Modlar</string>
+    <string name="settings_presets_summary">%1$d mod · Aktif: %2$s</string>
     <string name="settings_focus_duration">Odak süresi</string>
     <string name="settings_break_duration">Mola süresi</string>
     <string name="settings_long_break_duration">Uzun mola süresi</string>
-    <string name="settings_long_break_hint">Her %d odak seansından sonra mola uzun olur.</string>
     <string name="settings_minutes_format">%d dk</string>
     <string name="settings_days_format">%d gün</string>
     <string name="settings_decrease">%s azalt</string>

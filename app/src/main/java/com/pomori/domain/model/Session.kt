@@ -11,6 +11,8 @@ data class FocusSession(
     val plannedDurationMs: Long,
     val endedAt: Long? = null,
     val status: SessionStatus,
+    /** Seansın çalıştığı mod. Mod eklenmeden önceki kayıtlarda yoktur (null). */
+    val presetId: Long? = null,
 )
 
 /**

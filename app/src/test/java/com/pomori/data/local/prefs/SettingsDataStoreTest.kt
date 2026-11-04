@@ -125,4 +125,30 @@ class SettingsDataStoreTest {
         store.setLongBreakMinutes(500)
         assertEquals(120, store.longBreakMinutes.first())
     }
+
+    @Test
+    fun `no preset is selected until one is chosen`() = runTest {
+        assertEquals(null, store.selectedPresetId.first())
+    }
+
+    @Test
+    fun `the selected preset is stored and read back`() = runTest {
+        store.setSelectedPresetId(7)
+
+        assertEquals(7L, store.selectedPresetId.first())
+    }
+
+    @Test
+    fun `restoring notifications is on by default`() = runTest {
+        assertTrue(store.restoreNotifications.first())
+    }
+
+    @Test
+    fun `the restore setting is stored and read back`() = runTest {
+        store.setRestoreNotifications(false)
+        assertFalse(store.restoreNotifications.first())
+
+        store.setRestoreNotifications(true)
+        assertTrue(store.restoreNotifications.first())
+    }
 }

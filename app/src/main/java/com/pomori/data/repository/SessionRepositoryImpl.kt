@@ -29,6 +29,7 @@ internal fun FocusSession.toEntity() = FocusSessionEntity(
     plannedDurationMs = plannedDurationMs,
     endedAt = endedAt,
     status = status,
+    presetId = presetId,
 )
 
 internal fun FocusSessionEntity.toDomain() = FocusSession(
@@ -38,4 +39,5 @@ internal fun FocusSessionEntity.toDomain() = FocusSession(
     plannedDurationMs = plannedDurationMs,
     endedAt = endedAt,
     status = status,
+    presetId = presetId,
 )

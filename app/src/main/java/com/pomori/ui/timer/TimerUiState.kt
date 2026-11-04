@@ -1,5 +1,6 @@
 package com.pomori.ui.timer
 
+import com.pomori.domain.model.Preset
 import com.pomori.domain.model.SettingsDefaults
 import com.pomori.domain.timer.TimerDefaults
 import com.pomori.domain.timer.TimerState
@@ -7,8 +8,6 @@ import com.pomori.domain.timer.remainingMs
 
 enum class TimerPhase { IDLE, FOCUS, BREAK_PENDING, BREAK }
 
-/** Uzun molaya kadar kaç odak seansı gerektiği; döngü noktalarının sayısı. */
-const val CYCLE_LENGTH = SettingsDefaults.LONG_BREAK_EVERY
 
 data class TimerUiState(
     val phase: TimerPhase = TimerPhase.IDLE,
@@ -16,12 +15,17 @@ data class TimerUiState(
     val totalMs: Long = TimerDefaults.FOCUS_MS,
     /** Mola uzun mu? Çalışan molada kayıttan, bekleyen molada sıradaki molanın planından gelir. */
     val isLongBreak: Boolean = false,
-    /** Bu Pomodoro döngüsünde tamamlanan odak seansı sayısı (0 until [CYCLE_LENGTH]). */
+    /** Bu Pomodoro döngüsünde tamamlanan odak seansı sayısı (0 until [cycleLength]). */
     val cycleDone: Int = 0,
+    /** Seçili modun kaç odak seansında bir uzun mola verdiği; döngü noktalarının sayısı. */
+    val cycleLength: Int = SettingsDefaults.LONG_BREAK_EVERY,
+    /** Seçilebilir modlar (oluşturulma sırasıyla). Henüz yüklenmediyse boş. */
+    val presets: List<Preset> = emptyList(),
+    val selectedPresetId: Long? = null,
 ) {
     /** Döngü noktalarında kaç tanesi dolu gösterilir: uzun mola hak edilmişken (ya da sürerken) hepsi dolu. */
     val cycleFilled: Int
-        get() = if (isLongBreak && (phase == TimerPhase.BREAK_PENDING || phase == TimerPhase.BREAK)) CYCLE_LENGTH else cycleDone
+        get() = if (isLongBreak && (phase == TimerPhase.BREAK_PENDING || phase == TimerPhase.BREAK)) cycleLength else cycleDone
 
     /** 1.0 = süre dolu, 0.0 = bitti. */
     val progress: Float

@@ -88,4 +88,18 @@ class StartLongBreakTest {
 
         assertEquals(TimerState.Break(endAt = start + longMs, durationMs = longMs, isLong = true), next)
     }
+
+    @Test
+    fun `the preset id is saved with the session`() = runTest {
+        startSession(SessionType.FOCUS, focusMs, presetId = 7)
+
+        assertEquals(7L, repo.rows.values.single().presetId)
+    }
+
+    @Test
+    fun `the preset id is optional`() = runTest {
+        startSession(SessionType.FOCUS, focusMs)
+
+        assertEquals(null, repo.rows.values.single().presetId)
+    }
 }

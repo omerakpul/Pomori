@@ -4,8 +4,13 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [FocusSessionEntity::class, CapturedNotificationEntity::class, ExceptionRuleEntity::class],
-    version = 3,
+    entities = [
+        FocusSessionEntity::class,
+        CapturedNotificationEntity::class,
+        ExceptionRuleEntity::class,
+        PresetEntity::class,
+    ],
+    version = 4,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -14,4 +19,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun notificationDao(): NotificationDao
 
     abstract fun exceptionDao(): ExceptionDao
+
+    abstract fun presetDao(): PresetDao
 }

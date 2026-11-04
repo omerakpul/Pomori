@@ -55,7 +55,7 @@ class CaptureNotificationTest {
     fun `during focus the notification is stored under the active session`() = runTest {
         val result = useCase(focusSession(sessionId = 7))(incoming())
 
-        assertEquals(CaptureResult.Captured(id = 1), result)
+        assertEquals(CaptureResult.Captured(id = 1, sessionId = 7, sessionEndsAt = now + 60_000), result)
         val stored = repo.rows.single()
         assertEquals(7L, stored.sessionId)
         assertEquals("com.whatsapp", stored.packageName)
@@ -246,5 +246,12 @@ class CaptureNotificationTest {
         val result = useCase(focusSession())(incoming(category = "call"))
 
         assertEquals(CaptureResult.Ignored(IgnoreReason.TIME_SENSITIVE), result)
+    }
+
+    @Test
+    fun `the result carries the planned end of the session so the notification can be snoozed until then`() = runTest {
+        val result = useCase(focusSession(endAt = now + 25 * 60_000))(incoming())
+
+        assertEquals(now + 25 * 60_000, (result as CaptureResult.Captured).sessionEndsAt)
     }
 }

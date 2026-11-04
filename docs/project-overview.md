@@ -24,7 +24,8 @@ Odaklanırken telefon bildirimleri dikkati dağıtır. Bildirimleri tamamen kapa
 - Bulut yedekleme
 
 ## Bilinen kısıtlar (README'de açıkça yazılacak)
-- Yakalanan bildirimler sistemden kaldırıldığı için özetteki öğeye dokununca orijinal uygulamadaki sohbete doğrudan gidilemez. Dokununca ilgili uygulama açılır.
+- Yakalanan bildirimler seans boyunca panelden alınır ama silinmez: seans bitişine kadar ertelenir (`snoozeNotification`) ve süre dolunca sistem orijinal bildirimi, kendi eylemleri ve dokunma hedefiyle paneline geri koyar. Dolayısıyla panelden dokunmak orijinal sohbete götürür. Özetteki öğeye dokununca ise yalnızca ilgili uygulama açılır (özet, orijinal bildirimin eylemlerini taşımaz).
+- Ertelenen bildirimler seans bitince, planlanan bitiş saatinde panele döner. Seans erken iptal edilirse Pomori ertelemenin süresini kısaltır (Android ertelenmiş bildirimin süresinin yeniden kısaltılmasına izin verir) ve bildirimler birkaç saniye içinde hemen panele döner; iptalde özet de açılır. Bu geri getirme yalnızca Pomori çalışıyorken (bildirim erişimi bağlıyken) yapılır: süreç öldürülürse bildirimler yine planlanan bitiş saatinde döner. Kullanıcı Ayarlar'dan "Seans bitince geri getir"i kapatırsa eski davranışa (silme) dönülür.
 - Bildirim erişim izni hassas bir izindir. Uygulama Play Store politikaları nedeniyle APK olarak GitHub'da dağıtılacak.
 - Bildirim içeriği yalnızca cihazda tutulur, ağa gönderilmez, belirlenen süre sonunda silinir (varsayılan 7 gün).
 

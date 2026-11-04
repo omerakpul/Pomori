@@ -85,9 +85,58 @@ class MigrationTest {
             close()
         }
 
-        val db = helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_1_2, MIGRATION_2_3)
+        val db = helper.runMigrationsAndValidate(
+            DB_NAME,
+            4,
+            true,
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+        )
 
         db.query("SELECT COUNT(*) FROM focus_sessions").use {
+            it.moveToFirst()
+            assertEquals(1, it.getInt(0))
+        }
+    }
+
+    @Test
+    fun migrate3To4_keepsSessionsWithoutAPresetAndAddsThePresetsTable() {
+        helper.createDatabase(DB_NAME, 3).apply {
+            execSQL(
+                "INSERT INTO focus_sessions (id, type, startedAt, plannedDurationMs, endedAt, status) " +
+                    "VALUES (1, 'FOCUS', 1000, 1500000, 2000, 'COMPLETED')",
+            )
+            execSQL(
+                "INSERT INTO captured_notifications (sessionId, packageName, appLabel, title, text, postedAt) " +
+                    "VALUES (1, 'com.whatsapp', 'WhatsApp', 'Ayşe', 'Selam', 1500)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB_NAME, 4, true, MIGRATION_3_4)
+
+        // Eski seans korunur, hangi modda çalıştığı bilinmediği için presetId NULL kalır.
+        db.query("SELECT status, presetId FROM focus_sessions WHERE id = 1").use {
+            it.moveToFirst()
+            assertEquals("COMPLETED", it.getString(0))
+            assertEquals(true, it.isNull(1))
+        }
+        // Bildirimler etkilenmez.
+        db.query("SELECT COUNT(*) FROM captured_notifications").use {
+            it.moveToFirst()
+            assertEquals(1, it.getInt(0))
+        }
+        // Yeni tablo çalışır; yeni seans mod bilgisini taşıyabilir.
+        db.execSQL(
+            "INSERT INTO presets (name, focusMinutes, breakMinutes, longBreakMinutes, longBreakEvery) " +
+                "VALUES ('Ders', 40, 5, 15, 4)",
+        )
+        db.execSQL(
+            "INSERT INTO focus_sessions (type, startedAt, plannedDurationMs, endedAt, status, presetId) " +
+                "VALUES ('FOCUS', 3000, 2400000, NULL, 'RUNNING', 1)",
+        )
+        db.query("SELECT COUNT(*) FROM presets").use {
             it.moveToFirst()
             assertEquals(1, it.getInt(0))
         }

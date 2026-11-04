@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.R
+import com.pomori.domain.model.Preset
 import com.pomori.platform.permission.NotificationListenerAccess
 import com.pomori.platform.permission.NotificationPermission
 import com.pomori.platform.service.FocusForegroundService
@@ -77,6 +81,7 @@ fun TimerRoute(
     onOpenDigest: (sessionId: Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenStats: () -> Unit,
+    onOpenPresets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
@@ -122,6 +127,8 @@ fun TimerRoute(
         onOpenNotificationAccess = { NotificationListenerAccess.openSettings(context) },
         onOpenSettings = onOpenSettings,
         onOpenStats = onOpenStats,
+        onSelectPreset = viewModel::selectPreset,
+        onOpenPresets = onOpenPresets,
         modifier = modifier,
     )
 }
@@ -138,6 +145,8 @@ fun TimerScreen(
     onOpenNotificationAccess: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenStats: () -> Unit = {},
+    onSelectPreset: (Long) -> Unit = {},
+    onOpenPresets: () -> Unit = {},
 ) {
     val phaseLabel = when (state.phase) {
         TimerPhase.IDLE -> stringResource(R.string.phase_idle)
@@ -182,6 +191,17 @@ fun TimerScreen(
             )
         }
 
+        // Modlar yalnızca boştayken seçilir: çalışan bir seansın ya da bekleyen molanın ortasında mod değişirse
+        // mola planı yanlış modun süresine göre hesaplanırdı.
+        if (state.phase == TimerPhase.IDLE && state.presets.isNotEmpty()) {
+            PresetChips(
+                presets = state.presets,
+                selectedId = state.selectedPresetId,
+                onSelect = onSelectPreset,
+                onManage = onOpenPresets,
+            )
+        }
+
         // Sığıyorsa ortalanır, sığmıyorsa (büyük yazı tipi, küçük ekran) kaydırılır: hiçbir düğme kesilmez.
         BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
             Column(
@@ -201,7 +221,7 @@ fun TimerScreen(
                     modifier = Modifier.testTag(TAG_PHASE),
                 )
                 Spacer(Modifier.height(14.dp))
-                CycleDots(filled = state.cycleFilled, total = CYCLE_LENGTH, accent = accent)
+                CycleDots(filled = state.cycleFilled, total = state.cycleLength, accent = accent)
                 Spacer(Modifier.height(20.dp))
 
                 Box(
@@ -472,7 +492,7 @@ private fun hintText(state: TimerUiState): String = when (state.phase) {
     TimerPhase.FOCUS -> stringResource(R.string.timer_hint_focus)
     TimerPhase.BREAK_PENDING ->
         if (state.isLongBreak) {
-            stringResource(R.string.timer_hint_long_break_pending, CYCLE_LENGTH)
+            stringResource(R.string.timer_hint_long_break_pending, state.cycleLength)
         } else {
             stringResource(R.string.timer_hint_break_pending)
         }
@@ -500,6 +520,69 @@ private fun CycleDots(filled: Int, total: Int, accent: Color) {
     }
 }
 
+/**
+ * Mod çipleri: her mod için bir çip, sonda modları düzenleme girişi. Seçili çip vurgu renginde. Yatay kaydırılır:
+ * çok sayıda mod ya da büyük yazı tipinde hiçbiri kesilmez.
+ */
+@Composable
+private fun PresetChips(
+    presets: List<Preset>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+    onManage: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 4.dp)
+            .testTag(TAG_PRESETS),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        presets.forEach { preset ->
+            val selected = preset.id == selectedId
+            // Dokunma hedefi 48 dp; görünen çip biraz daha ince (40 dp).
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Tab, onClick = { onSelect(preset.id) })
+                    .semantics { this.selected = selected }
+                    .testTag("timer_preset_${preset.id}"),
+            ) {
+                Text(
+                    text = preset.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) scheme.primary else scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .background(
+                            color = if (selected) scheme.primary.copy(alpha = 0.16f) else Color.Transparent,
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (selected) scheme.primary else scheme.outlineVariant,
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                )
+            }
+        }
+        IconButton(onClick = onManage, modifier = Modifier.testTag(TAG_PRESETS_EDIT)) {
+            Icon(
+                painter = painterResource(R.drawable.ic_edit),
+                contentDescription = stringResource(R.string.timer_presets_edit),
+                tint = scheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+const val TAG_PRESETS = "timer_presets"
+const val TAG_PRESETS_EDIT = "timer_presets_edit"
 const val TAG_CYCLE = "timer_cycle"
 const val TAG_PHASE = "timer_phase"
 const val TAG_TIME = "timer_time"

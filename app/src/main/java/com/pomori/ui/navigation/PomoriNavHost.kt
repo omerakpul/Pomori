@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pomori.ui.digest.DigestRoute
 import com.pomori.ui.digest.DigestViewModel
+import com.pomori.ui.presets.PresetsRoute
 import com.pomori.ui.settings.SettingsRoute
 import com.pomori.ui.stats.StatsRoute
 import com.pomori.ui.timer.TimerRoute
@@ -17,6 +18,7 @@ object Routes {
     const val TIMER = "timer"
     const val SETTINGS = "settings"
     const val STATS = "stats"
+    const val PRESETS = "presets"
 
     /** `{sessionId}` argümanı DigestViewModel'in SavedStateHandle'ına otomatik gelir. */
     const val DIGEST = "digest/{${DigestViewModel.ARG_SESSION_ID}}"
@@ -34,10 +36,17 @@ fun PomoriNavHost(modifier: Modifier = Modifier) {
                 onOpenDigest = { sessionId -> navController.navigate(Routes.digest(sessionId)) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenStats = { navController.navigate(Routes.STATS) },
+                onOpenPresets = { navController.navigate(Routes.PRESETS) },
             )
         }
         composable(Routes.SETTINGS) {
-            SettingsRoute(onBack = { navController.popBackStack() })
+            SettingsRoute(
+                onBack = { navController.popBackStack() },
+                onOpenPresets = { navController.navigate(Routes.PRESETS) },
+            )
+        }
+        composable(Routes.PRESETS) {
+            PresetsRoute(onBack = { navController.popBackStack() })
         }
         composable(Routes.STATS) {
             StatsRoute(onBack = { navController.popBackStack() })

@@ -14,4 +14,5 @@ data class FocusSessionEntity(
     val plannedDurationMs: Long,
     val endedAt: Long?,
     val status: SessionStatus,
+    val presetId: Long? = null,
 )

@@ -6,8 +6,10 @@ import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.InstalledApp
 import com.pomori.domain.repository.ExceptionRepository
 import com.pomori.domain.repository.InstalledApps
+import com.pomori.domain.repository.PresetRepository
 import com.pomori.domain.repository.SettingsStore
 import com.pomori.domain.usecase.CleanupOldNotifications
+import com.pomori.domain.usecase.ObserveSelectedPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,8 @@ class SettingsViewModel @Inject constructor(
     private val exceptions: ExceptionRepository,
     private val cleanupOldNotifications: CleanupOldNotifications,
     installedApps: InstalledApps,
+    presets: PresetRepository,
+    observeSelectedPreset: ObserveSelectedPreset,
 ) : ViewModel() {
 
     /** Yüklü uygulamalar bir kez okunur (PackageManager sorgusu pahalı); ekran açılışında gelir. */
@@ -32,40 +36,31 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { installed.value = installedApps.launchableApps() }
     }
 
-    /** Odak, mola ve uzun mola süreleri. `combine` türlü en fazla 5 akış alır; süreleri bir arada tutarız. */
-    private data class Durations(val focus: Int, val break_: Int, val longBreak: Int)
-
-    private val durations = combine(
-        settings.focusMinutes,
-        settings.breakMinutes,
-        settings.longBreakMinutes,
-        ::Durations,
-    )
+    /** `combine` türlü en fazla 5 akış alır; sayısal ve açık/kapalı ayarları bir çifte toplarız. */
+    private val general = combine(settings.retentionDays, settings.restoreNotifications) { days, restore ->
+        days to restore
+    }
 
     val uiState: StateFlow<SettingsUiState> = combine(
-        durations,
-        settings.retentionDays,
+        presets.observeAll(),
+        observeSelectedPreset(),
+        general,
         exceptions.observeAll(),
         installed,
-    ) { time, retention, rules, apps ->
+    ) { allPresets, selected, (retention, restore), rules, apps ->
         val labels = apps.associate { it.packageName to it.label }
         val excepted = rules.filterIsInstance<ExceptionRule.Package>().map { it.value }.toSet()
         SettingsUiState(
-            focusMinutes = time.focus,
-            breakMinutes = time.break_,
-            longBreakMinutes = time.longBreak,
+            presetCount = allPresets.size,
+            selectedPresetName = selected?.name,
             retentionDays = retention,
+            restoreNotifications = restore,
             rules = rules.map { RuleItem(it, displayName(it, labels)) },
             selectableApps = apps.filter { it.packageName !in excepted },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SettingsUiState())
 
-    // Aralık dışı değerleri depo en yakın sınıra çeker; ekran sınırlarda düğmeyi zaten kapatır.
-    fun setFocusMinutes(minutes: Int) = launch { settings.setFocusMinutes(minutes) }
-
-    fun setBreakMinutes(minutes: Int) = launch { settings.setBreakMinutes(minutes) }
-
-    fun setLongBreakMinutes(minutes: Int) = launch { settings.setLongBreakMinutes(minutes) }
+    fun setRestoreNotifications(enabled: Boolean) = launch { settings.setRestoreNotifications(enabled) }
 
     // Süre kısaltıldığında kullanıcı bildirimlerin silinmesini bekler: günlük işi beklemeden hemen temizle.
     fun setRetentionDays(days: Int) = launch {

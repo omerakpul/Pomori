@@ -3,6 +3,9 @@ package com.pomori.ui.timer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
@@ -17,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.pomori.R
+import com.pomori.domain.model.Preset
 import com.pomori.ui.permission.TAG_ACCESS_WARNING
 import com.pomori.ui.pomoriComposeRule
 import com.pomori.ui.str
@@ -57,6 +61,8 @@ class TimerScreenTest {
                     onOpenNotificationAccess = { calls.log += "openAccess" },
                     onOpenSettings = { calls.log += "openSettings" },
                     onOpenStats = { calls.log += "openStats" },
+                    onSelectPreset = { calls.log += "select:$it" },
+                    onOpenPresets = { calls.log += "openPresets" },
                 )
             }
         }
@@ -365,5 +371,102 @@ class TimerScreenTest {
         show(idle.copy(cycleDone = 0))
 
         rule.onNodeWithContentDescription(rule.str(R.string.timer_cycle_description, 0, 4)).assertIsDisplayed()
+    }
+
+    // --- mod çipleri ---
+
+    private val modes = listOf(
+        Preset(1, "Varsayılan", 25, 5, 15),
+        Preset(2, "Ders", 40, 5, 15),
+        Preset(3, "Hızlı", 20, 2, 10),
+    )
+    private val idleWithModes = idle.copy(presets = modes, selectedPresetId = 2)
+
+    @Test
+    fun presetChips_listEveryMode() {
+        show(idleWithModes)
+
+        rule.onNodeWithTag(TAG_PRESETS).assertIsDisplayed()
+        rule.onNodeWithText("Varsayılan").assertIsDisplayed()
+        rule.onNodeWithText("Ders").assertIsDisplayed()
+        rule.onNodeWithText("Hızlı").assertIsDisplayed()
+    }
+
+    @Test
+    fun presetChips_markOnlyTheSelectedOne() {
+        show(idleWithModes)
+
+        rule.onNodeWithTag("timer_preset_2").assertIsSelected()
+        rule.onNodeWithTag("timer_preset_1").assertIsNotSelected()
+        rule.onNodeWithTag("timer_preset_3").assertIsNotSelected()
+    }
+
+    @Test
+    fun presetChips_reportTheTappedMode() {
+        val calls = show(idleWithModes)
+
+        rule.onNodeWithTag("timer_preset_3").performClick()
+
+        assertEquals(listOf("select:3"), calls.log)
+    }
+
+    @Test
+    fun presetChips_haveATouchTargetOfAtLeast48dp() {
+        show(idleWithModes)
+
+        rule.onNodeWithTag("timer_preset_1").assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun presetChips_offerTheEditScreen() {
+        val calls = show(idleWithModes)
+
+        rule.onNodeWithTag(TAG_PRESETS_EDIT).performClick()
+
+        assertEquals(listOf("openPresets"), calls.log)
+    }
+
+    // Çalışan seansın ya da bekleyen molanın ortasında mod değişmez: çipler yalnızca boştayken görünür.
+
+    @Test
+    fun presetChips_areHiddenWhileFocusing() {
+        show(focus.copy(presets = modes, selectedPresetId = 2))
+
+        rule.onNodeWithTag(TAG_PRESETS).assertDoesNotExist()
+    }
+
+    @Test
+    fun presetChips_areHiddenWhileTheBreakIsPending() {
+        show(breakPending.copy(presets = modes, selectedPresetId = 2))
+
+        rule.onNodeWithTag(TAG_PRESETS).assertDoesNotExist()
+    }
+
+    @Test
+    fun presetChips_areHiddenDuringTheBreak() {
+        show(onBreak.copy(presets = modes, selectedPresetId = 2))
+
+        rule.onNodeWithTag(TAG_PRESETS).assertDoesNotExist()
+    }
+
+    @Test
+    fun presetChips_areHiddenUntilThePresetsHaveLoaded() {
+        show(idle)
+
+        rule.onNodeWithTag(TAG_PRESETS).assertDoesNotExist()
+    }
+
+    @Test
+    fun theCycleDots_followTheModesCycleLength() {
+        show(focus.copy(cycleDone = 1, cycleLength = 3))
+
+        rule.onNodeWithContentDescription(rule.str(R.string.timer_cycle_description, 1, 3)).assertIsDisplayed()
+    }
+
+    @Test
+    fun longBreakHint_namesTheModesCycleLength() {
+        show(longBreakPending.copy(cycleLength = 3))
+
+        rule.onNodeWithText(rule.str(R.string.timer_hint_long_break_pending, 3)).assertIsDisplayed()
     }
 }

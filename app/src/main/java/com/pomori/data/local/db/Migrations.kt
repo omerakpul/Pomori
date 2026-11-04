@@ -52,3 +52,27 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
     }
 }
+
+/**
+ * v3 → v4: `presets` tablosu eklendi ve seanslara hangi modda çalıştıklarını gösteren `presetId` sütunu geldi.
+ * Mevcut seanslarda `presetId` NULL kalır (mod öncesi kayıtlar). Mevcut tek-ayar süreleri bu tabloya DataStore'dan
+ * uygulama açılışında ("Varsayılan" mod) taşınır; SQL tarafında okunabilecek bir kaynak yoktur.
+ * SQL, `schemas/.../4.json` ile birebir aynı olmalı; MigrationTest bunu doğrular.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `presets` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `focusMinutes` INTEGER NOT NULL,
+                `breakMinutes` INTEGER NOT NULL,
+                `longBreakMinutes` INTEGER NOT NULL,
+                `longBreakEvery` INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("ALTER TABLE `focus_sessions` ADD COLUMN `presetId` INTEGER")
+    }
+}

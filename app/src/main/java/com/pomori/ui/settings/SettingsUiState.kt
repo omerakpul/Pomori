@@ -11,10 +11,12 @@ data class RuleItem(
 )
 
 data class SettingsUiState(
-    val focusMinutes: Int = SettingsDefaults.FOCUS_MINUTES,
-    val breakMinutes: Int = SettingsDefaults.BREAK_MINUTES,
-    val longBreakMinutes: Int = SettingsDefaults.LONG_BREAK_MINUTES,
+    /** Mod sayısı ve seçili modun adı: ayarlardaki "Modlar" satırında gösterilir. */
+    val presetCount: Int = 0,
+    val selectedPresetName: String? = null,
     val retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
+    /** Yakalanan bildirimler seans bitince panele geri getirilsin mi? */
+    val restoreNotifications: Boolean = true,
     /** Eklenme sırasıyla. */
     val rules: List<RuleItem> = emptyList(),
     /** Henüz istisna olmayan, yüklü uygulamalar; uygulama adına göre sıralı. */

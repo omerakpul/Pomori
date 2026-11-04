@@ -1,10 +1,14 @@
 package com.pomori.domain.usecase
 
 import app.cash.turbine.test
+import com.pomori.data.repository.PresetRepositoryImpl
+import com.pomori.data.repository.toEntity
 import com.pomori.domain.model.FocusSession
+import com.pomori.domain.model.Preset
 import com.pomori.domain.model.SessionStatus
 import com.pomori.domain.model.SessionType
 import com.pomori.testutil.FakeClock
+import com.pomori.testutil.FakePresetDao
 import com.pomori.testutil.FakeSessionRepository
 import com.pomori.testutil.FakeSettingsStore
 import java.time.ZoneOffset
@@ -23,18 +27,27 @@ class GetBreakPlanTest {
     private val now = 100 * day + 12 * 60 * minute
     private val clock = FakeClock(nowMs = now)
     private val sessions = FakeSessionRepository()
-    private val settings = FakeSettingsStore(breakMinutes = 5, longBreakMinutes = 15)
-    private val getBreakPlan = GetBreakPlan(sessions, settings, clock)
+    private val settings = FakeSettingsStore()
+    private val presetDao = FakePresetDao(listOf(Preset(1, "Varsayılan", 25, 5, 15, 4).toEntity()))
+    private val presets = PresetRepositoryImpl(presetDao)
+    private val getBreakPlan = GetBreakPlan(sessions, ObserveSelectedPreset(presets, settings), clock)
 
     private suspend fun session(
         startedAt: Long = now,
         type: SessionType = SessionType.FOCUS,
         status: SessionStatus = SessionStatus.COMPLETED,
+        presetId: Long? = 1L,
     ) = sessions.insert(
-        FocusSession(type = type, startedAt = startedAt, plannedDurationMs = 25 * minute, status = status),
+        FocusSession(
+            type = type,
+            startedAt = startedAt,
+            plannedDurationMs = 25 * minute,
+            status = status,
+            presetId = presetId,
+        ),
     )
 
-    private suspend fun completedToday(count: Int) = repeat(count) { session() }
+    private suspend fun completedToday(count: Int, presetId: Long? = 1L) = repeat(count) { session(presetId = presetId) }
 
     @Test
     fun `without any session the break is short and the cycle is empty`() = runTest {
@@ -117,7 +130,7 @@ class GetBreakPlanTest {
         getBreakPlan().test {
             assertEquals(15 * minute, awaitItem().durationMs)
 
-            settings.setLongBreakMinutes(30)
+            presets.update(Preset(1, "Varsayılan", 25, 5, 30, 4))
             assertEquals(30 * minute, awaitItem().durationMs)
         }
     }
@@ -146,5 +159,58 @@ class GetBreakPlanTest {
         assertEquals(100 * day, startOfDay(noonUtc, ZoneOffset.UTC))
         // UTC+3: aynı an yerel olarak 15:00, gün başlangıcı UTC'de bir önceki 21:00.
         assertEquals(100 * day - 3 * 60 * minute, startOfDay(noonUtc, ZoneOffset.ofHours(3)))
+    }
+
+    // --- modlar ---
+
+    @Test
+    fun `sessions of other presets do not count`() = runTest {
+        completedToday(3, presetId = 1L)
+        completedToday(5, presetId = 2L)
+
+        getBreakPlan().test {
+            val plan = awaitItem()
+            assertFalse(plan.isLong)
+            assertEquals(3, plan.focusDoneInCycle)
+        }
+    }
+
+    @Test
+    fun `sessions without a preset do not count`() = runTest {
+        completedToday(4, presetId = null)
+
+        getBreakPlan().test {
+            val plan = awaitItem()
+            assertFalse(plan.isLong)
+            assertEquals(0, plan.focusDoneInCycle)
+        }
+    }
+
+    @Test
+    fun `the cycle length comes from the preset`() = runTest {
+        presetDao.update(Preset(1, "Varsayılan", 25, 5, 15, 2).toEntity())
+        completedToday(2)
+
+        getBreakPlan().test {
+            val plan = awaitItem()
+            assertTrue(plan.isLong)
+            assertEquals(2, plan.cycleLength)
+            assertEquals(0, plan.focusDoneInCycle)
+        }
+    }
+
+    @Test
+    fun `durations and the plan follow the selected preset`() = runTest {
+        presetDao.insert(Preset(0, "Ders", 40, 3, 20, 3).toEntity())
+        settings.setSelectedPresetId(2)
+        completedToday(3, presetId = 2L)
+
+        getBreakPlan().test {
+            val plan = awaitItem()
+            assertTrue(plan.isLong)
+            assertEquals(20 * minute, plan.durationMs)
+            assertEquals(2L, plan.presetId)
+            assertEquals(3, plan.cycleLength)
+        }
     }
 }

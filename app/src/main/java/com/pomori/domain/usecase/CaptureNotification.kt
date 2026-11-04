@@ -15,8 +15,13 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
 sealed interface CaptureResult {
-    /** Bildirim kaydedildi; çağıran taraf onu sistemden kaldırabilir. */
-    data class Captured(val id: Long) : CaptureResult
+    /**
+     * Bildirim kaydedildi; çağıran taraf onu sistemden kaldırabilir ya da ertelebilir.
+     *
+     * @property sessionId yakalandığı odak seansı: seans iptal edilirse bildirimleri geri getirmek için.
+     * @property sessionEndsAt o seansın planlanan bitişi (epoch ms): erteleme buna kadar sürer.
+     */
+    data class Captured(val id: Long, val sessionId: Long, val sessionEndsAt: Long) : CaptureResult
 
     /** Çalışan bir odak seansı yok (boşta, mola ya da süre dolmuş): bildirime dokunulmaz. */
     data object NoActiveFocus : CaptureResult
@@ -51,9 +56,10 @@ class CaptureNotification @Inject constructor(
             return CaptureResult.Ignored(IgnoreReason.EXCEPTED)
         }
 
+        val session = checkNotNull(active)
         val id = notifications.insert(
             CapturedNotification(
-                sessionId = checkNotNull(active).sessionId,
+                sessionId = session.sessionId,
                 packageName = incoming.packageName,
                 appLabel = incoming.appLabel,
                 title = incoming.title,
@@ -61,6 +67,6 @@ class CaptureNotification @Inject constructor(
                 postedAt = incoming.postedAt,
             ),
         )
-        return CaptureResult.Captured(id)
+        return CaptureResult.Captured(id, sessionId = session.sessionId, sessionEndsAt = session.endAt)
     }
 }

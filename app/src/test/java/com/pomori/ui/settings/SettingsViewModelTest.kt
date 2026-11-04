@@ -4,12 +4,17 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.ExceptionRule
+import com.pomori.data.repository.PresetRepositoryImpl
+import com.pomori.data.repository.toEntity
 import com.pomori.domain.model.InstalledApp
+import com.pomori.domain.model.Preset
 import com.pomori.domain.usecase.CleanupOldNotifications
+import com.pomori.domain.usecase.ObserveSelectedPreset
 import com.pomori.testutil.FakeClock
 import com.pomori.testutil.FakeExceptionRepository
 import com.pomori.testutil.FakeInstalledApps
 import com.pomori.testutil.FakeNotificationRepository
+import com.pomori.testutil.FakePresetDao
 import com.pomori.testutil.FakeSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,12 +54,19 @@ class SettingsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel(store: FakeSettingsStore = settings) = SettingsViewModel(
-        store,
-        exceptions,
-        CleanupOldNotifications(store, notifications, clock),
-        apps,
-    )
+    private var presetDao = FakePresetDao(listOf(Preset(1, "Varsayılan", 25, 5, 15).toEntity()))
+
+    private fun viewModel(store: FakeSettingsStore = settings): SettingsViewModel {
+        val presets = PresetRepositoryImpl(presetDao)
+        return SettingsViewModel(
+            store,
+            exceptions,
+            CleanupOldNotifications(store, notifications, clock),
+            apps,
+            presets,
+            ObserveSelectedPreset(presets, store),
+        )
+    }
 
     private suspend fun notificationAgo(days: Long) {
         notifications.insert(
@@ -73,30 +85,22 @@ class SettingsViewModelTest {
     private suspend fun ReceiveTurbine<SettingsUiState>.latest(): SettingsUiState = expectMostRecentItem()
 
     @Test
-    fun `starts with the stored settings`() = runTest {
-        val vm = viewModel(FakeSettingsStore(focusMinutes = 40, breakMinutes = 8, retentionDays = 14))
+    fun `starts with the stored retention period`() = runTest {
+        val vm = viewModel(FakeSettingsStore(retentionDays = 14))
         vm.uiState.test {
-            val state = latest()
-            assertEquals(40, state.focusMinutes)
-            assertEquals(8, state.breakMinutes)
-            assertEquals(14, state.retentionDays)
+            assertEquals(14, latest().retentionDays)
         }
     }
 
     @Test
-    fun `changing a setting writes it and updates the state`() = runTest {
+    fun `the retention period is written and shown`() = runTest {
         val vm = viewModel()
         vm.uiState.test {
             latest()
 
-            vm.setFocusMinutes(45)
-            vm.setBreakMinutes(10)
             vm.setRetentionDays(21)
 
-            val state = latest()
-            assertEquals(45, state.focusMinutes)
-            assertEquals(10, state.breakMinutes)
-            assertEquals(21, state.retentionDays)
+            assertEquals(21, latest().retentionDays)
         }
     }
 
@@ -106,12 +110,26 @@ class SettingsViewModelTest {
         vm.uiState.test {
             latest()
 
-            vm.setFocusMinutes(0)
-            assertEquals(1, latest().focusMinutes)
-            vm.setFocusMinutes(500)
-            assertEquals(120, latest().focusMinutes)
             vm.setRetentionDays(99)
             assertEquals(30, latest().retentionDays)
+            vm.setRetentionDays(0)
+            assertEquals(1, latest().retentionDays)
+        }
+    }
+
+    @Test
+    fun `the presets row shows how many modes there are and which one is active`() = runTest {
+        presetDao = FakePresetDao(
+            listOf(
+                Preset(1, "Varsayılan", 25, 5, 15).toEntity(),
+                Preset(2, "Ders", 40, 5, 15).toEntity(),
+            ),
+        )
+        val vm = viewModel(FakeSettingsStore(selectedPresetId = 2))
+        vm.uiState.test {
+            val state = latest()
+            assertEquals(2, state.presetCount)
+            assertEquals("Ders", state.selectedPresetName)
         }
     }
 
@@ -278,6 +296,20 @@ class SettingsViewModelTest {
 
             assertEquals(0, notifications.rows.size)
             assertEquals(1, latest().retentionDays)
+        }
+    }
+
+    @Test
+    fun `the restore setting is on by default and can be switched off and on`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            assertTrue(latest().restoreNotifications)
+
+            vm.setRestoreNotifications(false)
+            assertEquals(false, latest().restoreNotifications)
+
+            vm.setRestoreNotifications(true)
+            assertTrue(latest().restoreNotifications)
         }
     }
 }

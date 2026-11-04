@@ -13,6 +13,7 @@ object SettingsDefaults {
     val FOCUS_RANGE = 1..120
     val BREAK_RANGE = 1..60
     val LONG_BREAK_RANGE = 1..120
+    val LONG_BREAK_EVERY_RANGE = 2..8
     val RETENTION_RANGE = 1..30
 }
 

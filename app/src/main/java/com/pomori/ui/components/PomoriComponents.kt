@@ -3,6 +3,7 @@ package com.pomori.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -215,12 +218,83 @@ fun IconLabel(@DrawableRes icon: Int, text: String) {
 fun PomoriButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         shape = RoundedCornerShape(18.dp),
         elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp, 0.dp, 0.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 58.dp),
     ) { content() }
+}
+
+/** Erişilebilirlik için dokunma hedefi en az 48 dp olmalıdır. */
+private val STEPPER_TOUCH_TARGET = 48.dp
+
+/**
+ * Etiketli, tek parça "segment" kontrol: [ − | değer | + ]. Üç ayrı daire düğmeden çok daha derli toplu.
+ * Düğmeler `${tag}_dec` / `${tag}_inc`, değer `${tag}_value` etiketini taşır.
+ */
+@Composable
+fun StepperRow(
+    @DrawableRes icon: Int,
+    tint: Color,
+    label: String,
+    valueText: String,
+    canDecrement: Boolean,
+    canIncrement: Boolean,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    tag: String,
+    modifier: Modifier = Modifier,
+) {
+    val decreaseDescription = stringResource(R.string.settings_decrease, label)
+    val increaseDescription = stringResource(R.string.settings_increase, label)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        IconBadge(icon = icon, tint = tint)
+        Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        // Tek parça "segment" kontrol: [ - | değer | + ]. Üç ayrı daire düğmeden çok daha derli toplu.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp)),
+        ) {
+            IconButton(
+                onClick = onDecrement,
+                enabled = canDecrement,
+                modifier = Modifier
+                    .size(STEPPER_TOUCH_TARGET)
+                    .semantics { contentDescription = decreaseDescription }
+                    .testTag("${tag}_dec"),
+            ) { Icon(painterResource(R.drawable.ic_remove), contentDescription = null) }
+            Text(
+                text = valueText,
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                // Tek satır: büyük yazı tipinde "25 dk" ikiye bölünmez, bunun yerine etiket daralır.
+                maxLines = 1,
+                softWrap = false,
+                // En az genişlik: normal boyutta "5 dk", "25 dk" ve "4 seans" aynı yeri kaplar, kontroller
+                // satırlar arasında hizalı kalır; büyük yazı tipinde değer gerektiği kadar genişler.
+                modifier = Modifier
+                    .widthIn(min = 64.dp)
+                    .testTag("${tag}_value"),
+            )
+            IconButton(
+                onClick = onIncrement,
+                enabled = canIncrement,
+                modifier = Modifier
+                    .size(STEPPER_TOUCH_TARGET)
+                    .semantics { contentDescription = increaseDescription }
+                    .testTag("${tag}_inc"),
+            ) { Icon(painterResource(R.drawable.ic_add), contentDescription = null) }
+        }
+    }
 }

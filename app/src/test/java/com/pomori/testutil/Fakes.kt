@@ -1,5 +1,7 @@
 package com.pomori.testutil
 
+import com.pomori.data.local.db.PresetDao
+import com.pomori.data.local.db.PresetEntity
 import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.ExceptionRule
@@ -68,18 +70,24 @@ class FakeSettingsStore(
     focusMinutes: Int = SettingsDefaults.FOCUS_MINUTES,
     breakMinutes: Int = SettingsDefaults.BREAK_MINUTES,
     longBreakMinutes: Int = SettingsDefaults.LONG_BREAK_MINUTES,
+    selectedPresetId: Long? = null,
+    restoreNotifications: Boolean = true,
     retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
 ) : SettingsStore {
     private val done = MutableStateFlow(initialOnboardingDone)
     private val focus = MutableStateFlow(focusMinutes)
     private val breakTime = MutableStateFlow(breakMinutes)
     private val longBreak = MutableStateFlow(longBreakMinutes)
+    private val selectedPreset = MutableStateFlow(selectedPresetId)
+    private val restore = MutableStateFlow(restoreNotifications)
     private val retention = MutableStateFlow(retentionDays)
 
     override val onboardingDone: Flow<Boolean> = done
     override val focusMinutes: Flow<Int> = focus
     override val breakMinutes: Flow<Int> = breakTime
     override val longBreakMinutes: Flow<Int> = longBreak
+    override val selectedPresetId: Flow<Long?> = selectedPreset
+    override val restoreNotifications: Flow<Boolean> = restore
     override val retentionDays: Flow<Int> = retention
 
     override suspend fun setOnboardingDone() {
@@ -93,6 +101,14 @@ class FakeSettingsStore(
 
     override suspend fun setBreakMinutes(minutes: Int) {
         breakTime.value = minutes.coerceIn(SettingsDefaults.BREAK_RANGE)
+    }
+
+    override suspend fun setRestoreNotifications(enabled: Boolean) {
+        restore.value = enabled
+    }
+
+    override suspend fun setSelectedPresetId(id: Long) {
+        selectedPreset.value = id
     }
 
     override suspend fun setLongBreakMinutes(minutes: Int) {
@@ -171,4 +187,31 @@ class FakeNotificationRepository : NotificationRepository {
                 )
                 .take(limit)
         }
+}
+
+/**
+ * Bellek içi [PresetDao]. Gerçek [com.pomori.data.repository.PresetRepositoryImpl] ile birlikte kullanılır: depo
+ * kuralları (normalize, boş ad, son modu silmeme) testlerde de gerçek koddan gelir, ikinci bir sahte kopyası olmaz.
+ */
+class FakePresetDao(initial: List<PresetEntity> = emptyList()) : PresetDao {
+    private val rows = MutableStateFlow(initial)
+    private var nextId = (initial.maxOfOrNull { it.id } ?: 0L) + 1
+
+    override suspend fun insert(preset: PresetEntity): Long {
+        val id = nextId++
+        rows.value = rows.value + preset.copy(id = id)
+        return id
+    }
+
+    override suspend fun update(preset: PresetEntity) {
+        rows.value = rows.value.map { if (it.id == preset.id) preset else it }
+    }
+
+    override suspend fun delete(id: Long) {
+        rows.value = rows.value.filterNot { it.id == id }
+    }
+
+    override suspend fun count(): Int = rows.value.size
+
+    override fun observeAll(): Flow<List<PresetEntity>> = rows.map { list -> list.sortedBy { it.id } }
 }

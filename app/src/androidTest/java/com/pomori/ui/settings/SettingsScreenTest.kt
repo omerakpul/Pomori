@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -50,14 +52,13 @@ class SettingsScreenTest {
             PomoriTheme {
                 SettingsScreen(
                     state = state,
-                    onFocusMinutesChange = { calls += "focus:$it" },
-                    onBreakMinutesChange = { calls += "break:$it" },
                     onRetentionDaysChange = { calls += "retention:$it" },
                     onAddSender = { calls += "sender:$it" },
                     onAddApp = { calls += "app:${it.packageName}" },
                     onRemoveRule = { calls += "remove:${it.value}" },
                     onBack = { calls += "back" },
-                    onLongBreakMinutesChange = { calls += "longBreak:$it" },
+                    onOpenPresets = { calls += "openPresets" },
+                    onRestoreNotificationsChange = { calls += "restore:$it" },
                 )
             }
         }
@@ -68,35 +69,13 @@ class SettingsScreenTest {
         rule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag(tag))
     }
 
-    // --- süreler ---
+    // --- saklama süresi ---
 
     @Test
-    fun showsTheCurrentValues() {
-        show(SettingsUiState(focusMinutes = 40, breakMinutes = 8, retentionDays = 14))
+    fun showsTheCurrentRetention() {
+        show(SettingsUiState(retentionDays = 14))
 
-        rule.onNodeWithTag("settings_focus_value").assertTextEquals(rule.str(R.string.settings_minutes_format, 40))
-        rule.onNodeWithTag("settings_break_value").assertTextEquals(rule.str(R.string.settings_minutes_format, 8))
         rule.onNodeWithTag("settings_retention_value").assertTextEquals(rule.str(R.string.settings_days_format, 14))
-    }
-
-    @Test
-    fun focusDuration_changesInStepsOfFiveMinutes() {
-        show(SettingsUiState(focusMinutes = 25))
-
-        rule.onNodeWithTag("settings_focus_inc").performClick()
-        rule.onNodeWithTag("settings_focus_dec").performClick()
-
-        assertEquals(listOf("focus:30", "focus:20"), calls)
-    }
-
-    @Test
-    fun breakDuration_changesInStepsOfOneMinute() {
-        show(SettingsUiState(breakMinutes = 5))
-
-        rule.onNodeWithTag("settings_break_inc").performClick()
-        rule.onNodeWithTag("settings_break_dec").performClick()
-
-        assertEquals(listOf("break:6", "break:4"), calls)
     }
 
     @Test
@@ -110,32 +89,47 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun theLowerLimits_disableTheDecreaseButtons() {
-        show(SettingsUiState(focusMinutes = 1, breakMinutes = 1, retentionDays = 1))
+    fun theLowerLimit_disablesTheDecreaseButton() {
+        show(SettingsUiState(retentionDays = 1))
 
-        rule.onNodeWithTag("settings_focus_dec").assertIsNotEnabled()
-        rule.onNodeWithTag("settings_break_dec").assertIsNotEnabled()
         rule.onNodeWithTag("settings_retention_dec").assertIsNotEnabled()
-        rule.onNodeWithTag("settings_focus_inc").assertIsEnabled()
+        rule.onNodeWithTag("settings_retention_inc").assertIsEnabled()
     }
 
     @Test
-    fun theUpperLimits_disableTheIncreaseButtons() {
-        show(SettingsUiState(focusMinutes = 120, breakMinutes = 60, retentionDays = 30))
+    fun theUpperLimit_disablesTheIncreaseButton() {
+        show(SettingsUiState(retentionDays = 30))
 
-        rule.onNodeWithTag("settings_focus_inc").assertIsNotEnabled()
-        rule.onNodeWithTag("settings_break_inc").assertIsNotEnabled()
         rule.onNodeWithTag("settings_retention_inc").assertIsNotEnabled()
-        rule.onNodeWithTag("settings_focus_dec").assertIsEnabled()
+        rule.onNodeWithTag("settings_retention_dec").assertIsEnabled()
     }
 
     @Test
     fun aDisabledButton_doesNotReportAChange() {
-        show(SettingsUiState(focusMinutes = 1))
+        show(SettingsUiState(retentionDays = 1))
 
-        rule.onNodeWithTag("settings_focus_dec").performClick()
+        rule.onNodeWithTag("settings_retention_dec").performClick()
 
         assertEquals(emptyList<String>(), calls)
+    }
+
+    // --- modlar ---
+
+    @Test
+    fun presetsRow_showsTheCountAndTheActivePreset() {
+        show(SettingsUiState(presetCount = 3, selectedPresetName = "Ders"))
+
+        rule.onNodeWithTag("settings_presets_summary", useUnmergedTree = true)
+            .assertTextEquals(rule.str(R.string.settings_presets_summary, 3, "Ders"))
+    }
+
+    @Test
+    fun presetsRow_opensThePresetsScreen() {
+        show(SettingsUiState(presetCount = 1, selectedPresetName = "Varsayılan"))
+
+        rule.onNodeWithTag("settings_presets").performClick()
+
+        assertEquals(listOf("openPresets"), calls)
     }
 
     @Test
@@ -278,7 +272,7 @@ class SettingsScreenTest {
     fun stepperButtons_haveAtLeast48dpTouchTargets() {
         show()
 
-        listOf("focus", "break", "long_break", "retention").forEach { row ->
+        listOf("retention").forEach { row ->
             listOf("dec", "inc").forEach { direction ->
                 rule.onNodeWithTag("settings_${row}_$direction")
                     .assertWidthIsAtLeast(48.dp)
@@ -294,9 +288,7 @@ class SettingsScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = 2f)) {
                 PomoriTheme {
                     SettingsScreen(
-                        state = SettingsUiState(focusMinutes = 25),
-                        onFocusMinutesChange = {},
-                        onBreakMinutesChange = {},
+                        state = SettingsUiState(retentionDays = 14),
                         onRetentionDaysChange = {},
                         onAddSender = {},
                         onAddApp = {},
@@ -307,36 +299,51 @@ class SettingsScreenTest {
             }
         }
 
-        // "25 dk" ikiye bölünürse yüksekliği tek satırın yaklaşık iki katına çıkar.
-        val value = rule.onNodeWithTag("settings_focus_value").getUnclippedBoundsInRoot()
+        // "14 gün" ikiye bölünürse yüksekliği tek satırın yaklaşık iki katına çıkar.
+        scrollTo("settings_retention_value")
+        val value = rule.onNodeWithTag("settings_retention_value").getUnclippedBoundsInRoot()
         assertTrue("Değer birden çok satıra bölünmüş (yükseklik ${value.height})", value.height < 56.dp)
     }
 
-    // --- uzun mola ---
+    // --- bildirimleri geri getir ---
 
     @Test
-    fun longBreak_showsItsDurationAndTheCycleHint() {
-        show(SettingsUiState(longBreakMinutes = 20))
+    fun restoreSwitch_showsTheCurrentSetting() {
+        show(SettingsUiState(restoreNotifications = true))
 
-        rule.onNodeWithTag("settings_long_break_value")
-            .assertTextEquals(rule.str(R.string.settings_minutes_format, 20))
-        rule.onNodeWithText(rule.str(R.string.settings_long_break_hint, 4)).assertIsDisplayed()
+        rule.onNodeWithTag("settings_restore").assertIsOn()
     }
 
     @Test
-    fun longBreak_changesInStepsOfFiveMinutes() {
-        show(SettingsUiState(longBreakMinutes = 15))
+    fun restoreSwitch_isOffWhenTheSettingIsOff() {
+        show(SettingsUiState(restoreNotifications = false))
 
-        rule.onNodeWithTag("settings_long_break_inc").performClick()
-        rule.onNodeWithTag("settings_long_break_dec").performClick()
-
-        assertEquals(listOf("longBreak:20", "longBreak:10"), calls)
+        rule.onNodeWithTag("settings_restore").assertIsOff()
     }
 
     @Test
-    fun longBreak_buttonsAreDisabledAtTheLimits() {
-        show(SettingsUiState(longBreakMinutes = 1))
-        rule.onNodeWithTag("settings_long_break_dec").assertIsNotEnabled()
-        rule.onNodeWithTag("settings_long_break_inc").assertIsEnabled()
+    fun restoreSwitch_reportsTheNewValueWhenTapped() {
+        show(SettingsUiState(restoreNotifications = true))
+
+        rule.onNodeWithTag("settings_restore").performClick()
+
+        assertEquals(listOf("restore:false"), calls)
+    }
+
+    @Test
+    fun restoreSwitch_turnsOnWhenItWasOff() {
+        show(SettingsUiState(restoreNotifications = false))
+
+        rule.onNodeWithTag("settings_restore").performClick()
+
+        assertEquals(listOf("restore:true"), calls)
+    }
+
+    @Test
+    fun restoreSwitch_explainsWhatItDoes() {
+        show(SettingsUiState())
+
+        rule.onNodeWithText(rule.str(R.string.settings_restore_title)).assertIsDisplayed()
+        rule.onNodeWithText(rule.str(R.string.settings_restore_body)).assertIsDisplayed()
     }
 }

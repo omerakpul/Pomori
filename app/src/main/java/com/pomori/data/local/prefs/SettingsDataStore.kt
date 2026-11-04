@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import com.pomori.di.SettingsPrefs
 import com.pomori.domain.model.SettingsDefaults
 import com.pomori.domain.repository.SettingsStore
@@ -31,6 +32,12 @@ class SettingsDataStore @Inject constructor(
     override val longBreakMinutes: Flow<Int> =
         intSetting(KEY_LONG_BREAK_MINUTES, SettingsDefaults.LONG_BREAK_MINUTES, SettingsDefaults.LONG_BREAK_RANGE)
 
+    override val restoreNotifications: Flow<Boolean> =
+        dataStore.data.map { it[KEY_RESTORE_NOTIFICATIONS] ?: true }.distinctUntilChanged()
+
+    override val selectedPresetId: Flow<Long?> =
+        dataStore.data.map { it[KEY_SELECTED_PRESET] }.distinctUntilChanged()
+
     override val retentionDays: Flow<Int> =
         intSetting(KEY_RETENTION_DAYS, SettingsDefaults.RETENTION_DAYS, SettingsDefaults.RETENTION_RANGE)
 
@@ -46,6 +53,14 @@ class SettingsDataStore @Inject constructor(
 
     override suspend fun setLongBreakMinutes(minutes: Int) =
         write(KEY_LONG_BREAK_MINUTES, minutes, SettingsDefaults.LONG_BREAK_RANGE)
+
+    override suspend fun setRestoreNotifications(enabled: Boolean) {
+        dataStore.edit { it[KEY_RESTORE_NOTIFICATIONS] = enabled }
+    }
+
+    override suspend fun setSelectedPresetId(id: Long) {
+        dataStore.edit { it[KEY_SELECTED_PRESET] = id }
+    }
 
     override suspend fun setRetentionDays(days: Int) =
         write(KEY_RETENTION_DAYS, days, SettingsDefaults.RETENTION_RANGE)
@@ -63,6 +78,8 @@ class SettingsDataStore @Inject constructor(
         val KEY_FOCUS_MINUTES = intPreferencesKey("focus_minutes")
         val KEY_BREAK_MINUTES = intPreferencesKey("break_minutes")
         val KEY_LONG_BREAK_MINUTES = intPreferencesKey("long_break_minutes")
+        val KEY_RESTORE_NOTIFICATIONS = booleanPreferencesKey("restore_notifications")
+        val KEY_SELECTED_PRESET = longPreferencesKey("selected_preset_id")
         val KEY_RETENTION_DAYS = intPreferencesKey("retention_days")
     }
 }

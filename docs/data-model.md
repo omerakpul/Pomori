@@ -11,6 +11,7 @@
 | plannedDurationMs | Long | |
 | endedAt | Long? | Bitmediyse null |
 | status | String (RUNNING / COMPLETED / CANCELLED) | |
+| presetId | Long? | Seansın çalıştığı mod (`presets.id`). Modlardan önceki kayıtlarda null. Bilerek FK değil: mod silinse de geçmiş seanslar ve istatistikleri kalır |
 
 ### CapturedNotificationEntity
 | Alan | Tür | Not |
@@ -23,12 +24,26 @@
 | text | String? | |
 | postedAt | Long | epoch ms |
 
+### PresetEntity ("Modlar")
+| Alan | Tür | Not |
+|---|---|---|
+| id | Long (PK, autoGenerate) | Oluşturulma sırası = liste sırası |
+| name | String | Kırpılır, en çok 24 karakter, boş olamaz |
+| focusMinutes | Int | 1..120 |
+| breakMinutes | Int | 1..60 |
+| longBreakMinutes | Int | 1..120 |
+| longBreakEvery | Int | 2..8: o modda tamamlanan her N. odak seansından sonra mola uzun olur |
+
+Uygulamanın her zaman en az bir modu vardır (son mod silinemez). İlk açılışta (ya da modlardan önceki bir sürümden
+güncellemede) `EnsureDefaultPreset`, eski tek-ayar sürelerinden "Varsayılan" modunu oluşturur ve seçer.
+
 ### Şema sürümleri
 | Sürüm | Değişiklik |
 |---|---|
 | 1 | `focus_sessions` |
 | 2 | `captured_notifications` eklendi (`MIGRATION_1_2`, `MigrationTest` ile doğrulanır) |
 | 3 | `exception_rules` ve `(type, value)` benzersiz indeksi eklendi (`MIGRATION_2_3`) |
+| 4 | `presets` tablosu ve `focus_sessions.presetId` eklendi (`MIGRATION_3_4`) |
 
 Her şema değişikliğinde sürümü artırın, `Migration` yazın ve `schemas/` altındaki yeni JSON'u commit edin.
 
@@ -129,11 +144,15 @@ interface ExceptionDao {
 ## DataStore anahtarları
 
 ### Ayarlar (Preferences DataStore)
+`focus_minutes`, `break_minutes` ve `long_break_minutes` artık yalnızca ilk açılışta "Varsayılan" modu oluşturmak için okunur; süreler modlardan (`presets`) gelir.
+
 | Anahtar | Tür | Varsayılan |
 |---|---|---|
 | focus_minutes | Int | 25 |
 | break_minutes | Int | 5 |
 | long_break_minutes | Int | 15 (aralık 1..120). Her 4. tamamlanan odak seansından sonra mola uzun olur; sayım bugün tamamlanan odak seanslarından türetilir, ayrıca saklanmaz |
+| selected_preset_id | Long? | Seçili mod; yoksa ya da o mod silinmişse ilk mod kullanılır |
+| restore_notifications | Boolean | true | Yakalanan bildirimler silinmez, seans bitişine kadar ertelenir ve süre dolunca panele geri döner; false ise eskisi gibi silinir |
 | retention_days | Int | 7 |
 | onboarding_done | Boolean | false |
 

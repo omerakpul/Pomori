@@ -23,7 +23,12 @@ class StartSession @Inject constructor(
     private val endSession: EndSession,
     private val clock: Clock,
 ) {
-    suspend operator fun invoke(type: SessionType, durationMs: Long, isLongBreak: Boolean = false): TimerState {
+    suspend operator fun invoke(
+        type: SessionType,
+        durationMs: Long,
+        isLongBreak: Boolean = false,
+        presetId: Long? = null,
+    ): TimerState {
         // Süresi dolmuş ama henüz kapatılmamış bir önceki seans varsa önce onu kapat.
         endSession(EndReason.TIME_UP)
 
@@ -47,6 +52,7 @@ class StartSession @Inject constructor(
                 startedAt = now,
                 plannedDurationMs = durationMs,
                 status = SessionStatus.RUNNING,
+                presetId = presetId,
             ),
         )
         activeStore.set(

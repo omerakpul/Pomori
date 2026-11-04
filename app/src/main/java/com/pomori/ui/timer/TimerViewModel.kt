@@ -6,6 +6,7 @@ import com.pomori.domain.Clock
 import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.SessionType
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.PresetRepository
 import com.pomori.domain.repository.SettingsStore
 import com.pomori.domain.timer.TimerDefaults
 import com.pomori.domain.timer.TimerState
@@ -13,6 +14,8 @@ import com.pomori.domain.timer.toTimerState
 import com.pomori.domain.usecase.EndReason
 import com.pomori.domain.usecase.EndSession
 import com.pomori.domain.usecase.GetBreakPlan
+import com.pomori.domain.usecase.GetDigest
+import com.pomori.domain.usecase.ObserveSelectedPreset
 import com.pomori.domain.usecase.StartSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -37,6 +41,9 @@ class TimerViewModel @Inject constructor(
     private val endSession: EndSession,
     private val settings: SettingsStore,
     private val getBreakPlan: GetBreakPlan,
+    private val getDigest: GetDigest,
+    private val observeSelectedPreset: ObserveSelectedPreset,
+    presets: PresetRepository,
 ) : ViewModel() {
 
     /**
@@ -46,13 +53,20 @@ class TimerViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<TimerUiState> = combine(
         activeSessionStore.active.flatMapLatest { active -> ticking(active) },
-        settings.focusMinutes,
+        observeSelectedPreset(),
+        presets.observeAll(),
         getBreakPlan(),
-    ) { ticking, focusMinutes, plan ->
-        val state = ticking.copy(cycleDone = plan.focusDoneInCycle)
+    ) { ticking, selected, all, plan ->
+        val state = ticking.copy(
+            cycleDone = plan.focusDoneInCycle,
+            cycleLength = plan.cycleLength,
+            presets = all,
+            selectedPresetId = selected?.id,
+        )
         when (state.phase) {
-            // Boştayken, başlatılınca çalışacak süreyi (ayardaki odak süresini) göster.
-            TimerPhase.IDLE -> (focusMinutes * MS_PER_MINUTE).let { ms -> state.copy(remainingMs = ms, totalMs = ms) }
+            // Boştayken, başlatılınca çalışacak süreyi (seçili modun odak süresini) göster.
+            TimerPhase.IDLE -> ((selected?.focusMinutes ?: return@combine state) * MS_PER_MINUTE)
+                .let { ms -> state.copy(remainingMs = ms, totalMs = ms) }
             // Bekleyen molanın uzun mu kısa mı olacağı, tamamlanan odak sayısından gelir.
             TimerPhase.BREAK_PENDING -> state.copy(isLongBreak = plan.isLong, totalMs = plan.durationMs)
             else -> state
@@ -62,14 +76,26 @@ class TimerViewModel @Inject constructor(
     private val shownDigestSessionId = MutableStateFlow<Long?>(null)
 
     /**
-     * Odak seansı bitip mola beklemeye geçince, o seansın özetini göstermek için bir kez yayınlanır.
-     * [onDigestShown] çağrılınca (ya da ekran yeniden oluşunca bile) aynı seans için tekrar yayınlanmaz;
-     * kullanıcı özeti kapatıp mola beklerken ekran onu tekrar açmaya zorlanmaz.
+     * İptal edilen ve bildirim yakalamış seans. Bildirimler yakalanırken sistemden kaldırıldığı için, özet
+     * gösterilmezse kaybolurlardı: iptalde de özet açılır (hiç bildirim yakalanmadıysa açılmaz).
+     */
+    private val cancelledDigestSessionId = MutableStateFlow<Long?>(null)
+
+    /**
+     * Özeti gösterilmesi gereken seans: odak seansı bitip mola beklemeye geçince ya da bildirim yakalamış bir
+     * seans iptal edilince, bir kez yayınlanır. [onDigestShown] çağrılınca (ya da ekran yeniden oluşunca bile) aynı
+     * seans için tekrar yayınlanmaz; kullanıcı özeti kapatıp mola beklerken ekran onu tekrar açmaya zorlanmaz.
      */
     val pendingDigestSessionId: StateFlow<Long?> =
-        combine(uiState, activeSessionStore.active, shownDigestSessionId) { ui, active, shown ->
+        combine(
+            uiState,
+            activeSessionStore.active,
+            shownDigestSessionId,
+            cancelledDigestSessionId,
+        ) { ui, active, shown, cancelled ->
             val sessionId = active?.sessionId
-            if (ui.phase == TimerPhase.BREAK_PENDING && sessionId != null && sessionId != shown) sessionId else null
+            val finished = sessionId.takeIf { ui.phase == TimerPhase.BREAK_PENDING }
+            (finished ?: cancelled)?.takeIf { it != shown }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     /** Özet ekranı açıldı; aynı seans için tekrar önerme. */
@@ -96,17 +122,35 @@ class TimerViewModel @Inject constructor(
         }
     }
 
-    // Süre, seans başlarken ayardan okunur; sonradan değişen ayar çalışan seansı etkilemez
-    // (bitiş zamanı başlangıçta DataStore'a yazılır).
-    fun startFocus() = launch { startSession(SessionType.FOCUS, settings.focusMinutes.first() * MS_PER_MINUTE) }
+    // Süre, seans başlarken seçili modundan okunur; sonradan değişen mod çalışan seansı etkilemez
+    // (bitiş zamanı başlangıçta DataStore'a yazılır). Seans, çalıştığı modun id'sini taşır.
+    fun startFocus() = launch {
+        val preset = observeSelectedPreset().filterNotNull().first()
+        startSession(SessionType.FOCUS, preset.focusMinutes * MS_PER_MINUTE, presetId = preset.id)
+    }
+
+    /**
+     * Modu seçer. Yalnızca boştayken: çalışan bir seansın (ya da bekleyen molanın) ortasında mod değişirse
+     * mola planı yanlış modun süresine göre hesaplanırdı. Ekran da çipleri yalnızca boştayken gösterir.
+     */
+    fun selectPreset(id: Long) = launch {
+        if (activeSessionStore.current() == null) settings.setSelectedPresetId(id)
+    }
 
     // Uzun mu kısa mı olacağı o anki plandan okunur ve kayda yazılır; sonradan ayar değişse de mola aynı kalır.
     fun startBreak() = launch {
         val plan = getBreakPlan().first()
-        startSession(SessionType.BREAK, plan.durationMs, plan.isLong)
+        startSession(SessionType.BREAK, plan.durationMs, plan.isLong, plan.presetId)
     }
 
-    fun cancelFocus() = launch { endSession(EndReason.CANCEL) }
+    fun cancelFocus() = launch {
+        val sessionId = activeSessionStore.current()?.sessionId
+        endSession(EndReason.CANCEL)
+        // Seans boyunca yakalanan bildirimler sistemden kaldırılmıştı; iptal edildi diye kaybolmasınlar.
+        if (sessionId != null && getDigest(sessionId).first().total > 0) {
+            cancelledDigestSessionId.value = sessionId
+        }
+    }
 
     fun skipBreak() = launch { endSession(EndReason.SKIP) }
 

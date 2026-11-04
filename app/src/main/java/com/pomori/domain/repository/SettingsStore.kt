@@ -18,6 +18,12 @@ interface SettingsStore {
     /** Uzun mola süresi, dakika. */
     val longBreakMinutes: Flow<Int>
 
+    /** Yakalanan bildirimler seans bitince panele geri getirilsin mi? Varsayılan: evet. */
+    val restoreNotifications: Flow<Boolean>
+
+    /** Seçili modun id'si; hiç seçilmediyse null (o zaman ilk mod kullanılır). */
+    val selectedPresetId: Flow<Long?>
+
     /** Yakalanan bildirimlerin kaç gün saklanacağı. */
     val retentionDays: Flow<Int>
 
@@ -28,6 +34,10 @@ interface SettingsStore {
     suspend fun setBreakMinutes(minutes: Int)
 
     suspend fun setLongBreakMinutes(minutes: Int)
+
+    suspend fun setRestoreNotifications(enabled: Boolean)
+
+    suspend fun setSelectedPresetId(id: Long)
 
     suspend fun setRetentionDays(days: Int)
 }
