@@ -2,8 +2,13 @@ package com.pomori.testutil
 
 import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.CapturedNotification
+import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.FocusSession
+import com.pomori.domain.model.InstalledApp
+import com.pomori.domain.model.SettingsDefaults
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.ExceptionRepository
+import com.pomori.domain.repository.InstalledApps
 import com.pomori.domain.repository.NotificationRepository
 import com.pomori.domain.repository.SessionRepository
 import com.pomori.domain.repository.SettingsStore
@@ -42,14 +47,63 @@ class FakeActiveSessionStore(initial: ActiveSession? = null) : ActiveSessionStor
     }
 }
 
-class FakeSettingsStore(initialOnboardingDone: Boolean = false) : SettingsStore {
+class FakeSettingsStore(
+    initialOnboardingDone: Boolean = false,
+    focusMinutes: Int = SettingsDefaults.FOCUS_MINUTES,
+    breakMinutes: Int = SettingsDefaults.BREAK_MINUTES,
+    retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
+) : SettingsStore {
     private val done = MutableStateFlow(initialOnboardingDone)
+    private val focus = MutableStateFlow(focusMinutes)
+    private val breakTime = MutableStateFlow(breakMinutes)
+    private val retention = MutableStateFlow(retentionDays)
 
     override val onboardingDone: Flow<Boolean> = done
+    override val focusMinutes: Flow<Int> = focus
+    override val breakMinutes: Flow<Int> = breakTime
+    override val retentionDays: Flow<Int> = retention
 
     override suspend fun setOnboardingDone() {
         done.value = true
     }
+
+    // Gerçek uygulamayla aynı: aralık dışı değerler en yakın sınıra çekilir.
+    override suspend fun setFocusMinutes(minutes: Int) {
+        focus.value = minutes.coerceIn(SettingsDefaults.FOCUS_RANGE)
+    }
+
+    override suspend fun setBreakMinutes(minutes: Int) {
+        breakTime.value = minutes.coerceIn(SettingsDefaults.BREAK_RANGE)
+    }
+
+    override suspend fun setRetentionDays(days: Int) {
+        retention.value = days.coerceIn(SettingsDefaults.RETENTION_RANGE)
+    }
+}
+
+class FakeExceptionRepository : ExceptionRepository {
+    private val state = MutableStateFlow<List<ExceptionRule>>(emptyList())
+    val rules: List<ExceptionRule> get() = state.value
+
+    override fun observeAll(): Flow<List<ExceptionRule>> = state
+
+    override suspend fun add(rule: ExceptionRule): Boolean {
+        val normalized = when (rule) {
+            is ExceptionRule.Package -> ExceptionRule.Package(rule.value.trim())
+            is ExceptionRule.Sender -> ExceptionRule.Sender(rule.value.trim())
+        }
+        if (normalized.value.isEmpty() || normalized in rules) return false
+        state.value = rules + normalized
+        return true
+    }
+
+    override suspend fun remove(rule: ExceptionRule) {
+        state.value = rules - rule
+    }
+}
+
+class FakeInstalledApps(var apps: List<InstalledApp> = emptyList()) : InstalledApps {
+    override suspend fun launchableApps(): List<InstalledApp> = apps
 }
 
 class FakeNotificationRepository : NotificationRepository {

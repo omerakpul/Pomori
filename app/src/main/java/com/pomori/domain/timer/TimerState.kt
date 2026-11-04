@@ -1,11 +1,12 @@
 package com.pomori.domain.timer
 
 import com.pomori.domain.model.ActiveSession
+import com.pomori.domain.model.SettingsDefaults
 import com.pomori.domain.model.SessionType
 
 object TimerDefaults {
-    const val FOCUS_MS: Long = 25 * 60 * 1000L
-    const val BREAK_MS: Long = 5 * 60 * 1000L
+    const val FOCUS_MS: Long = SettingsDefaults.FOCUS_MINUTES * 60 * 1000L
+    const val BREAK_MS: Long = SettingsDefaults.BREAK_MINUTES * 60 * 1000L
 }
 
 sealed interface TimerState {

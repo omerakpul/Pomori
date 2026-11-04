@@ -7,6 +7,7 @@ import com.pomori.domain.usecase.StartSession
 import com.pomori.testutil.FakeActiveSessionStore
 import com.pomori.testutil.FakeClock
 import com.pomori.testutil.FakeSessionRepository
+import com.pomori.testutil.FakeSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -40,7 +41,8 @@ class TimerViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = TimerViewModel(clock, store, startSession, endSession)
+    private fun viewModel(settings: FakeSettingsStore = FakeSettingsStore()) =
+        TimerViewModel(clock, store, startSession, endSession, settings)
 
     @Test
     fun `initial state is idle with the default focus duration`() = runTest {
@@ -226,6 +228,72 @@ class TimerViewModelTest {
             vm.skipBreak()
 
             assertEquals(null, awaitItem())
+        }
+    }
+
+    // --- ayarlanan süreler ---
+
+    @Test
+    fun `idle shows the configured focus duration`() = runTest {
+        viewModel(FakeSettingsStore(focusMinutes = 10)).uiState.test {
+            var state = awaitItem()
+            if (state.remainingMs != 10 * 60_000L) state = awaitItem()
+            assertEquals(TimerPhase.IDLE, state.phase)
+            assertEquals(10 * 60_000L, state.remainingMs)
+            assertEquals(10 * 60_000L, state.totalMs)
+        }
+    }
+
+    @Test
+    fun `starting focus uses the configured duration`() = runTest {
+        val vm = viewModel(FakeSettingsStore(focusMinutes = 10))
+        vm.uiState.test {
+            awaitItem() // idle
+            vm.startFocus()
+
+            var state = awaitItem()
+            while (state.phase != TimerPhase.FOCUS) state = awaitItem()
+            assertEquals(10 * 60_000L, state.totalMs)
+            assertEquals(10 * 60_000L, state.remainingMs)
+        }
+        assertEquals(10 * 60_000L, repo.rows.values.single().plannedDurationMs)
+    }
+
+    @Test
+    fun `starting a break uses the configured break duration`() = runTest {
+        val vm = viewModel(FakeSettingsStore(focusMinutes = 1, breakMinutes = 3))
+        vm.uiState.test {
+            awaitItem()
+            vm.startFocus()
+            testScheduler.runCurrent()
+            clock.advanceBy(60_000L)
+            testScheduler.advanceTimeBy(500)
+            testScheduler.runCurrent()
+            var state = awaitItem()
+            while (state.phase != TimerPhase.BREAK_PENDING) state = awaitItem()
+
+            vm.startBreak()
+
+            while (state.phase != TimerPhase.BREAK) state = awaitItem()
+            assertEquals(3 * 60_000L, state.totalMs)
+        }
+    }
+
+    @Test
+    fun `changing the setting during a session does not change the running one`() = runTest {
+        val settings = FakeSettingsStore(focusMinutes = 10)
+        val vm = viewModel(settings)
+        vm.uiState.test {
+            awaitItem()
+            vm.startFocus()
+            var state = awaitItem()
+            while (state.phase != TimerPhase.FOCUS) state = awaitItem()
+
+            settings.setFocusMinutes(50)
+            testScheduler.runCurrent()
+            expectNoEvents()
+
+            assertEquals(10 * 60_000L, state.totalMs)
         }
     }
 }

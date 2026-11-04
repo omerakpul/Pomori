@@ -6,6 +6,7 @@ import com.pomori.domain.Clock
 import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.SessionType
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.SettingsStore
 import com.pomori.domain.timer.TimerDefaults
 import com.pomori.domain.timer.TimerState
 import com.pomori.domain.timer.toTimerState
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -32,6 +34,7 @@ class TimerViewModel @Inject constructor(
     private val activeSessionStore: ActiveSessionStore,
     private val startSession: StartSession,
     private val endSession: EndSession,
+    private val settings: SettingsStore,
 ) : ViewModel() {
 
     /**
@@ -39,9 +42,18 @@ class TimerViewModel @Inject constructor(
      * `kalan = bitişZamanı - şimdi` hesaplar; bir sayaç değişkenini azaltmaz.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<TimerUiState> = activeSessionStore.active
-        .flatMapLatest { active -> ticking(active) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TimerUiState())
+    val uiState: StateFlow<TimerUiState> = combine(
+        activeSessionStore.active.flatMapLatest { active -> ticking(active) },
+        settings.focusMinutes,
+    ) { state, focusMinutes ->
+        // Boştayken, başlatılınca çalışacak süreyi (ayardaki odak süresini) göster.
+        if (state.phase == TimerPhase.IDLE) {
+            val ms = focusMinutes * MS_PER_MINUTE
+            state.copy(remainingMs = ms, totalMs = ms)
+        } else {
+            state
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TimerUiState())
 
     private val shownDigestSessionId = MutableStateFlow<Long?>(null)
 
@@ -80,9 +92,11 @@ class TimerViewModel @Inject constructor(
         }
     }
 
-    fun startFocus() = launch { startSession(SessionType.FOCUS, TimerDefaults.FOCUS_MS) }
+    // Süre, seans başlarken ayardan okunur; sonradan değişen ayar çalışan seansı etkilemez
+    // (bitiş zamanı başlangıçta DataStore'a yazılır).
+    fun startFocus() = launch { startSession(SessionType.FOCUS, settings.focusMinutes.first() * MS_PER_MINUTE) }
 
-    fun startBreak() = launch { startSession(SessionType.BREAK, TimerDefaults.BREAK_MS) }
+    fun startBreak() = launch { startSession(SessionType.BREAK, settings.breakMinutes.first() * MS_PER_MINUTE) }
 
     fun cancelFocus() = launch { endSession(EndReason.CANCEL) }
 
@@ -94,6 +108,7 @@ class TimerViewModel @Inject constructor(
 
     private companion object {
         const val TICK_MS = 250L
+        const val MS_PER_MINUTE = 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }

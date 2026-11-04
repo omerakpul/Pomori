@@ -46,6 +46,7 @@ import com.pomori.ui.theme.PomoriTheme
 @Composable
 fun TimerRoute(
     onOpenDigest: (sessionId: Long) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
@@ -89,6 +90,7 @@ fun TimerRoute(
         onSkipBreak = viewModel::skipBreak,
         notificationAccessGranted = accessGranted,
         onOpenNotificationAccess = { NotificationListenerAccess.openSettings(context) },
+        onOpenSettings = onOpenSettings,
         modifier = modifier,
     )
 }
@@ -103,6 +105,7 @@ fun TimerScreen(
     modifier: Modifier = Modifier,
     notificationAccessGranted: Boolean = true,
     onOpenNotificationAccess: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val phaseLabel = when (state.phase) {
         TimerPhase.IDLE -> stringResource(R.string.phase_idle)
@@ -126,6 +129,16 @@ fun TimerScreen(
                     .align(Alignment.TopCenter)
                     .padding(horizontal = 16.dp, vertical = 16.dp),
             )
+        }
+        // Süreyi çalışan bir seansın ortasında değiştirmek karışıklık yaratır: ayarlar yalnızca boştayken.
+        if (state.phase == TimerPhase.IDLE) {
+            TextButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .testTag(TAG_SETTINGS),
+            ) { Text(stringResource(R.string.timer_settings)) }
         }
         Column(
             modifier = Modifier
@@ -205,6 +218,7 @@ const val TAG_START_FOCUS = "timer_start_focus"
 const val TAG_CANCEL = "timer_cancel"
 const val TAG_START_BREAK = "timer_start_break"
 const val TAG_SKIP = "timer_skip"
+const val TAG_SETTINGS = "timer_settings"
 
 @Preview(showBackground = true)
 @Composable
