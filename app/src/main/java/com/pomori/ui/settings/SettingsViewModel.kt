@@ -32,18 +32,28 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { installed.value = installedApps.launchableApps() }
     }
 
-    val uiState: StateFlow<SettingsUiState> = combine(
+    /** Odak, mola ve uzun mola süreleri. `combine` türlü en fazla 5 akış alır; süreleri bir arada tutarız. */
+    private data class Durations(val focus: Int, val break_: Int, val longBreak: Int)
+
+    private val durations = combine(
         settings.focusMinutes,
         settings.breakMinutes,
+        settings.longBreakMinutes,
+        ::Durations,
+    )
+
+    val uiState: StateFlow<SettingsUiState> = combine(
+        durations,
         settings.retentionDays,
         exceptions.observeAll(),
         installed,
-    ) { focus, breakTime, retention, rules, apps ->
+    ) { time, retention, rules, apps ->
         val labels = apps.associate { it.packageName to it.label }
         val excepted = rules.filterIsInstance<ExceptionRule.Package>().map { it.value }.toSet()
         SettingsUiState(
-            focusMinutes = focus,
-            breakMinutes = breakTime,
+            focusMinutes = time.focus,
+            breakMinutes = time.break_,
+            longBreakMinutes = time.longBreak,
             retentionDays = retention,
             rules = rules.map { RuleItem(it, displayName(it, labels)) },
             selectableApps = apps.filter { it.packageName !in excepted },
@@ -54,6 +64,8 @@ class SettingsViewModel @Inject constructor(
     fun setFocusMinutes(minutes: Int) = launch { settings.setFocusMinutes(minutes) }
 
     fun setBreakMinutes(minutes: Int) = launch { settings.setBreakMinutes(minutes) }
+
+    fun setLongBreakMinutes(minutes: Int) = launch { settings.setLongBreakMinutes(minutes) }
 
     // Süre kısaltıldığında kullanıcı bildirimlerin silinmesini bekler: günlük işi beklemeden hemen temizle.
     fun setRetentionDays(days: Int) = launch {

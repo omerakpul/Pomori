@@ -1,12 +1,17 @@
 package com.pomori.ui.permission
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -15,9 +20,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.heading
@@ -55,24 +62,36 @@ fun NotificationAccessCard(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val amber = MaterialTheme.colorScheme.tertiary
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag(TAG_ACCESS_WARNING),
+        // Dolgulu sarı kutu yerine: soluk kehribar zemin, ince kehribar çizgi, normal metin rengi.
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            containerColor = amber.copy(alpha = 0.12f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ),
+        border = BorderStroke(1.dp, amber.copy(alpha = 0.55f)),
+        shape = RoundedCornerShape(20.dp),
     ) {
         Column(
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 14.dp, end = 8.dp, bottom = 4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(
-                text = stringResource(R.string.access_warning_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() },
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_notifications),
+                    contentDescription = null,
+                    tint = amber,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(R.string.access_warning_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
             Text(
                 text = stringResource(R.string.access_warning_body),
                 style = MaterialTheme.typography.bodyMedium,
@@ -82,9 +101,7 @@ fun NotificationAccessCard(
                 // Varsayılan `primary` rengi kartın zemininde (tertiaryContainer) bazı dinamik renk
                 // şemalarında neredeyse görünmez (koyu modda 1,12:1 ölçüldü). Kartın kendi içerik rengi
                 // her şemada okunur.
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                ),
+                colors = ButtonDefaults.textButtonColors(contentColor = amber),
                 modifier = Modifier.padding(top = 4.dp),
             ) {
                 Text(

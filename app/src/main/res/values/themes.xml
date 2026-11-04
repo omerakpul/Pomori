@@ -2,5 +2,8 @@
 <resources>
 
     <!-- Açık mod. Koyu karşılığı values-night/themes.xml içindedir. -->
-    <style name="Theme.Pomori" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Pomori" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Açılışta pencere, Compose ekranıyla aynı sıcak zeminle gelir; renk değişimi göze batmaz. -->
+        <item name="android:windowBackground">@color/pomori_background</item>
+    </style>
 </resources>

@@ -5,5 +5,7 @@
         Koyu mod: pencere arka planı ve sistem öğeleri Compose teması gelmeden önce de koyu olur.
         Açık tema sabit kalsaydı koyu modda açılışta beyaz bir pencere yanıp söner.
     -->
-    <style name="Theme.Pomori" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.Pomori" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/pomori_background</item>
+    </style>
 </resources>

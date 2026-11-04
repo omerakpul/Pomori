@@ -17,12 +17,12 @@ sealed interface TimerState {
     /** Odak bitti, kullanıcı molayı başlatmayı ya da atlamayı bekliyor. */
     data object BreakPending : TimerState
 
-    data class Break(val endAt: Long, val durationMs: Long) : TimerState
+    data class Break(val endAt: Long, val durationMs: Long, val isLong: Boolean = false) : TimerState
 }
 
 sealed interface TimerEvent {
     data class StartFocus(val durationMs: Long) : TimerEvent
-    data class StartBreak(val durationMs: Long) : TimerEvent
+    data class StartBreak(val durationMs: Long, val isLong: Boolean = false) : TimerEvent
 
     /** Süre doldu. Yalnızca `now >= endAt` ise geçişi tetikler. */
     data object TimeUp : TimerEvent
@@ -42,7 +42,7 @@ fun TimerState.remainingMs(now: Long): Long = when (this) {
 fun ActiveSession?.toRawState(): TimerState = when {
     this == null -> TimerState.Idle
     type == SessionType.FOCUS -> TimerState.Focus(endAt, plannedDurationMs)
-    else -> TimerState.Break(endAt, plannedDurationMs)
+    else -> TimerState.Break(endAt, plannedDurationMs, isLongBreak)
 }
 
 /**

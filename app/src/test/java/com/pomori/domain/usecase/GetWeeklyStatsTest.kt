@@ -183,4 +183,19 @@ class GetWeeklyStatsTest {
             assertEquals(1, awaitItem().topDistractors.size)
         }
     }
+
+    @Test
+    fun `the daily breakdown always covers seven days and adds up to the sessions of those days`() = runTest {
+        session(startedAgo = 0)
+        session(startedAgo = 0, planned = 50 * minute)
+        session(startedAgo = 2 * day)
+
+        getWeeklyStats().test {
+            val daily = awaitItem().dailyFocus
+            assertEquals(7, daily.size)
+            // Gün sınırı cihazın saat dilimine bağlı; yine de bugünkü iki seans son çubukta toplanır.
+            assertEquals(75 * minute, daily.last().focusMs)
+            assertEquals(100 * minute, daily.sumOf { it.focusMs })
+        }
+    }
 }

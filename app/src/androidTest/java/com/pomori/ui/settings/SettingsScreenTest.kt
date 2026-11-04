@@ -57,6 +57,7 @@ class SettingsScreenTest {
                     onAddApp = { calls += "app:${it.packageName}" },
                     onRemoveRule = { calls += "remove:${it.value}" },
                     onBack = { calls += "back" },
+                    onLongBreakMinutesChange = { calls += "longBreak:$it" },
                 )
             }
         }
@@ -277,7 +278,7 @@ class SettingsScreenTest {
     fun stepperButtons_haveAtLeast48dpTouchTargets() {
         show()
 
-        listOf("focus", "break", "retention").forEach { row ->
+        listOf("focus", "break", "long_break", "retention").forEach { row ->
             listOf("dec", "inc").forEach { direction ->
                 rule.onNodeWithTag("settings_${row}_$direction")
                     .assertWidthIsAtLeast(48.dp)
@@ -309,5 +310,33 @@ class SettingsScreenTest {
         // "25 dk" ikiye bölünürse yüksekliği tek satırın yaklaşık iki katına çıkar.
         val value = rule.onNodeWithTag("settings_focus_value").getUnclippedBoundsInRoot()
         assertTrue("Değer birden çok satıra bölünmüş (yükseklik ${value.height})", value.height < 56.dp)
+    }
+
+    // --- uzun mola ---
+
+    @Test
+    fun longBreak_showsItsDurationAndTheCycleHint() {
+        show(SettingsUiState(longBreakMinutes = 20))
+
+        rule.onNodeWithTag("settings_long_break_value")
+            .assertTextEquals(rule.str(R.string.settings_minutes_format, 20))
+        rule.onNodeWithText(rule.str(R.string.settings_long_break_hint, 4)).assertIsDisplayed()
+    }
+
+    @Test
+    fun longBreak_changesInStepsOfFiveMinutes() {
+        show(SettingsUiState(longBreakMinutes = 15))
+
+        rule.onNodeWithTag("settings_long_break_inc").performClick()
+        rule.onNodeWithTag("settings_long_break_dec").performClick()
+
+        assertEquals(listOf("longBreak:20", "longBreak:10"), calls)
+    }
+
+    @Test
+    fun longBreak_buttonsAreDisabledAtTheLimits() {
+        show(SettingsUiState(longBreakMinutes = 1))
+        rule.onNodeWithTag("settings_long_break_dec").assertIsNotEnabled()
+        rule.onNodeWithTag("settings_long_break_inc").assertIsEnabled()
     }
 }

@@ -39,13 +39,21 @@ internal fun textColorPairs(s: ColorScheme) = listOf(
     ColorPair("onSurfaceVariant / background (ipucu metinleri)", s.onSurfaceVariant, s.background),
     ColorPair("onSurface / card (surfaceContainerHighest)", s.onSurface, s.surfaceContainerHighest),
     ColorPair("onSurfaceVariant / card", s.onSurfaceVariant, s.surfaceContainerHighest),
+    ColorPair("onSurface / soft card (surfaceContainerLow)", s.onSurface, s.surfaceContainerLow),
+    ColorPair("onSurfaceVariant / soft card", s.onSurfaceVariant, s.surfaceContainerLow),
+    ColorPair("primary / soft card (bölüm etiketleri)", s.primary, s.surfaceContainerLow),
     ColorPair("onSurface / dialog (surfaceContainerHigh)", s.onSurface, s.surfaceContainerHigh),
     ColorPair("onSurfaceVariant / dialog", s.onSurfaceVariant, s.surfaceContainerHigh),
     ColorPair("primary / background (bölüm başlıkları, metin düğmeleri)", s.primary, s.background),
-    ColorPair("primary / card (Kaldır düğmesi)", s.primary, s.surfaceContainerHighest),
     ColorPair("primary / dialog (Kapat düğmesi)", s.primary, s.surfaceContainerHigh),
+    ColorPair("secondary / background (mola vurgusu, baş harf damgası)", s.secondary, s.background),
+    ColorPair("tertiary / background (baş harf damgası, simge)", s.tertiary, s.background),
+    ColorPair("secondary / soft card", s.secondary, s.surfaceContainerLow),
+    ColorPair("tertiary / soft card", s.tertiary, s.surfaceContainerLow),
     ColorPair("onPrimary / primary (dolu düğmeler)", s.onPrimary, s.primary),
     ColorPair("onPrimaryContainer / primaryContainer (sayı rozeti)", s.onPrimaryContainer, s.primaryContainer),
+    ColorPair("onSecondary / secondary (mola düğmesi)", s.onSecondary, s.secondary),
+    ColorPair("onSecondaryContainer / secondaryContainer (mola rozeti, simgeler)", s.onSecondaryContainer, s.secondaryContainer),
     ColorPair("onTertiaryContainer / tertiaryContainer (uyarı kartı)", s.onTertiaryContainer, s.tertiaryContainer),
     // Uyarı kartındaki düğme `primary` değil kartın içerik rengini (onTertiaryContainer) kullanır: bazı
     // dinamik şemalarda primary / tertiaryContainer 1,12:1 kadar düşüyor (bkz. NotificationAccessCard).
@@ -55,7 +63,10 @@ internal fun textColorPairs(s: ColorScheme) = listOf(
 internal fun componentColorPairs(s: ColorScheme) = listOf(
     ColorPair("outline / background (kenarlıklı düğmeler, metin alanı)", s.outline, s.background),
     ColorPair("outline / card (kenarlıklı düğmeler kartta)", s.outline, s.surfaceContainerHighest),
-    ColorPair("primary / background (ilerleme halkası, çubuklar)", s.primary, s.background),
+    ColorPair("primary / background (odak halkası)", s.primary, s.background),
+    ColorPair("secondary / background (mola halkası)", s.secondary, s.background),
+    ColorPair("outline / soft card (adım düğmeleri)", s.outline, s.surfaceContainerLow),
+    ColorPair("primary / soft card (çubuklar)", s.primary, s.surfaceContainerLow),
 )
 
 /** Eşiğin altında kalan çiftleri, oranlarıyla okunur satırlar olarak döner (boşsa hepsi geçti). */

@@ -25,10 +25,11 @@ object FocusNotifications {
      * Sistem geri sayımı kendisi gösterir (chronometer, bitiş zamanına göre).
      * Servis her saniye bildirimi güncellemek zorunda kalmaz; pil dostudur.
      */
-    fun running(context: Context, type: SessionType, endAt: Long): Notification {
+    fun running(context: Context, type: SessionType, endAt: Long, isLongBreak: Boolean = false): Notification {
         val title = when (type) {
             SessionType.FOCUS -> R.string.notification_focus_title
-            SessionType.BREAK -> R.string.notification_break_title
+            SessionType.BREAK ->
+                if (isLongBreak) R.string.notification_long_break_title else R.string.notification_break_title
         }
         return base(context, NotificationChannels.TIMER)
             .setContentTitle(context.getString(title))

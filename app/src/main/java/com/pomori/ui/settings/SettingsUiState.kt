@@ -13,6 +13,7 @@ data class RuleItem(
 data class SettingsUiState(
     val focusMinutes: Int = SettingsDefaults.FOCUS_MINUTES,
     val breakMinutes: Int = SettingsDefaults.BREAK_MINUTES,
+    val longBreakMinutes: Int = SettingsDefaults.LONG_BREAK_MINUTES,
     val retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
     /** Eklenme sırasıyla. */
     val rules: List<RuleItem> = emptyList(),

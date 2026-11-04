@@ -1,5 +1,6 @@
 package com.pomori.ui.stats
 
+import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
 
 data class StatsUiState(
@@ -9,7 +10,15 @@ data class StatsUiState(
     val completedSessions: Int = 0,
     /** Bildirim sayısına göre azalan sıralı. */
     val topDistractors: List<Distractor> = emptyList(),
+    /** Bugün dahil son 7 gün, eskiden yeniye. */
+    val dailyFocus: List<DayFocus> = emptyList(),
 ) {
+    /** Grafik, en az bir günde odak süresi varken anlamlıdır; hepsi sıfırsa boş bir şablon göstermeyiz. */
+    val hasChart: Boolean get() = dailyFocus.any { it.focusMs > 0 }
+
+    /** Çubuk yüksekliklerinin oranı için en uzun günün süresi. */
+    val maxDailyFocusMs: Long get() = dailyFocus.maxOfOrNull { it.focusMs } ?: 0L
+
     /** Yükleme bittiği halde hem tamamlanan seans hem bildirim yoksa henüz gösterilecek bir şey yoktur. */
     val isEmpty: Boolean get() = !isLoading && completedSessions == 0 && topDistractors.isEmpty()
 

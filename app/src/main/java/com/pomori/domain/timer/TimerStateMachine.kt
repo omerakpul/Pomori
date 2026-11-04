@@ -33,7 +33,7 @@ object TimerStateMachine {
         }
 
         BreakPending -> when (event) {
-            is StartBreak -> Break(endAt = now + event.durationMs, durationMs = event.durationMs)
+            is StartBreak -> Break(endAt = now + event.durationMs, durationMs = event.durationMs, isLong = event.isLong)
             Skip -> Idle
             else -> state
         }

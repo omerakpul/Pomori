@@ -108,4 +108,21 @@ class SettingsDataStoreTest {
         assertEquals(8, prefs[intPreferencesKey("break_minutes")])
         assertEquals(9, prefs[intPreferencesKey("retention_days")])
     }
+
+    @Test
+    fun `the long break defaults to fifteen minutes`() = runTest {
+        assertEquals(15, store.longBreakMinutes.first())
+    }
+
+    @Test
+    fun `a written long break is read back and clamped to the range`() = runTest {
+        store.setLongBreakMinutes(25)
+        assertEquals(25, store.longBreakMinutes.first())
+
+        store.setLongBreakMinutes(0)
+        assertEquals(1, store.longBreakMinutes.first())
+
+        store.setLongBreakMinutes(500)
+        assertEquals(120, store.longBreakMinutes.first())
+    }
 }

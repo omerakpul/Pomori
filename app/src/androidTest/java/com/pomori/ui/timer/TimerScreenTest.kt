@@ -311,4 +311,59 @@ class TimerScreenTest {
         assertTrue("Etiket halkadan yüksek", label.height <= ring.height)
         assertTrue("Etiket tek satır olmalı", label.height < 56.dp)
     }
+
+    // --- uzun mola ve döngü noktaları ---
+
+    private val longBreakPending =
+        TimerUiState(TimerPhase.BREAK_PENDING, 0, 15 * minute, isLongBreak = true, cycleDone = 0)
+    private val longBreakRunning =
+        TimerUiState(TimerPhase.BREAK, 14 * minute, 15 * minute, isLongBreak = true, cycleDone = 0)
+
+    @Test
+    fun longBreakPending_namesTheLongBreakAndOffersToStartIt() {
+        val calls = show(longBreakPending)
+
+        rule.onNodeWithTag(TAG_TIME, useUnmergedTree = true).assertTextEquals(rule.str(R.string.time_long_break_pending))
+        rule.onNodeWithContentDescription(rule.str(R.string.action_start_long_break)).performClick()
+
+        assertEquals(listOf("startBreak"), calls.log)
+    }
+
+    @Test
+    fun shortBreakPending_stillOffersTheNormalBreak() {
+        show(breakPending)
+
+        rule.onNodeWithContentDescription(rule.str(R.string.action_start_break)).assertIsDisplayed()
+        rule.onNodeWithContentDescription(rule.str(R.string.action_start_long_break)).assertDoesNotExist()
+    }
+
+    @Test
+    fun longBreakRunning_showsTheLongBreakLabelAndCaption() {
+        show(longBreakRunning)
+
+        rule.onNodeWithTag(TAG_PHASE).assertTextEquals(rule.str(R.string.phase_long_break))
+        rule.onNodeWithText(rule.str(R.string.timer_caption_long_break, 15)).assertIsDisplayed()
+    }
+
+    @Test
+    fun cycleDots_countTheFinishedFocusSessions() {
+        show(focus.copy(cycleDone = 2))
+
+        rule.onNodeWithContentDescription(rule.str(R.string.timer_cycle_description, 2, 4)).assertIsDisplayed()
+        rule.onNodeWithTag(TAG_CYCLE).assertIsDisplayed()
+    }
+
+    @Test
+    fun cycleDots_areFullWhileALongBreakIsEarned() {
+        show(longBreakPending)
+
+        rule.onNodeWithContentDescription(rule.str(R.string.timer_cycle_description, 4, 4)).assertIsDisplayed()
+    }
+
+    @Test
+    fun cycleDots_startOverAfterTheLongBreak() {
+        show(idle.copy(cycleDone = 0))
+
+        rule.onNodeWithContentDescription(rule.str(R.string.timer_cycle_description, 0, 4)).assertIsDisplayed()
+    }
 }

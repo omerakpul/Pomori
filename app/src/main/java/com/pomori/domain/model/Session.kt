@@ -22,4 +22,6 @@ data class ActiveSession(
     val type: SessionType,
     val endAt: Long,
     val plannedDurationMs: Long,
+    /** Yalnızca mola seanslarında anlamlı: bu mola "uzun mola" mı? Eski kayıtlarda yoktur, false sayılır. */
+    val isLongBreak: Boolean = false,
 )

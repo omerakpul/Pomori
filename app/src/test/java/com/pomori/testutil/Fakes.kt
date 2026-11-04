@@ -67,16 +67,19 @@ class FakeSettingsStore(
     initialOnboardingDone: Boolean = false,
     focusMinutes: Int = SettingsDefaults.FOCUS_MINUTES,
     breakMinutes: Int = SettingsDefaults.BREAK_MINUTES,
+    longBreakMinutes: Int = SettingsDefaults.LONG_BREAK_MINUTES,
     retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
 ) : SettingsStore {
     private val done = MutableStateFlow(initialOnboardingDone)
     private val focus = MutableStateFlow(focusMinutes)
     private val breakTime = MutableStateFlow(breakMinutes)
+    private val longBreak = MutableStateFlow(longBreakMinutes)
     private val retention = MutableStateFlow(retentionDays)
 
     override val onboardingDone: Flow<Boolean> = done
     override val focusMinutes: Flow<Int> = focus
     override val breakMinutes: Flow<Int> = breakTime
+    override val longBreakMinutes: Flow<Int> = longBreak
     override val retentionDays: Flow<Int> = retention
 
     override suspend fun setOnboardingDone() {
@@ -90,6 +93,10 @@ class FakeSettingsStore(
 
     override suspend fun setBreakMinutes(minutes: Int) {
         breakTime.value = minutes.coerceIn(SettingsDefaults.BREAK_RANGE)
+    }
+
+    override suspend fun setLongBreakMinutes(minutes: Int) {
+        longBreak.value = minutes.coerceIn(SettingsDefaults.LONG_BREAK_RANGE)
     }
 
     override suspend fun setRetentionDays(days: Int) {

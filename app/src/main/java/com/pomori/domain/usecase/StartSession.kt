@@ -23,7 +23,7 @@ class StartSession @Inject constructor(
     private val endSession: EndSession,
     private val clock: Clock,
 ) {
-    suspend operator fun invoke(type: SessionType, durationMs: Long): TimerState {
+    suspend operator fun invoke(type: SessionType, durationMs: Long, isLongBreak: Boolean = false): TimerState {
         // Süresi dolmuş ama henüz kapatılmamış bir önceki seans varsa önce onu kapat.
         endSession(EndReason.TIME_UP)
 
@@ -31,7 +31,7 @@ class StartSession @Inject constructor(
         val current = activeStore.current().toTimerState(now)
         val event = when (type) {
             SessionType.FOCUS -> TimerEvent.StartFocus(durationMs)
-            SessionType.BREAK -> TimerEvent.StartBreak(durationMs)
+            SessionType.BREAK -> TimerEvent.StartBreak(durationMs, isLongBreak)
         }
         val next = TimerStateMachine.reduce(current, event, now)
         if (next == current) return current
@@ -49,7 +49,15 @@ class StartSession @Inject constructor(
                 status = SessionStatus.RUNNING,
             ),
         )
-        activeStore.set(ActiveSession(sessionId = id, type = type, endAt = endAt, plannedDurationMs = durationMs))
+        activeStore.set(
+            ActiveSession(
+                sessionId = id,
+                type = type,
+                endAt = endAt,
+                plannedDurationMs = durationMs,
+                isLongBreak = isLongBreak && type == SessionType.BREAK,
+            ),
+        )
         return next
     }
 }

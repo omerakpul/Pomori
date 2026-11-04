@@ -72,6 +72,7 @@ class DigestScreenTest {
                     onClose = { calls.log += "close" },
                     notificationAccessGranted = accessGranted,
                     onOpenNotificationAccess = { calls.log += "openAccess" },
+                    onOpenApp = { calls.log += "open:$it" },
                 )
             }
         }
@@ -236,5 +237,35 @@ class DigestScreenTest {
         rule.onNodeWithTag("digest_continue").performClick()
 
         assertEquals(listOf("close"), calls.log)
+    }
+
+    // --- uygulamayı aç ---
+
+    private val whatsappExpanded = populated.copy(expanded = setOf("com.whatsapp"))
+
+    @Test
+    fun openAppButton_opensTheAppOfThatCard() {
+        val calls = show(whatsappExpanded)
+
+        rule.onNodeWithTag("digest_open_com.whatsapp").performClick()
+
+        assertEquals(listOf("open:com.whatsapp"), calls.log)
+    }
+
+    @Test
+    fun openAppButton_isOnlyShownWhileTheCardIsExpanded() {
+        show(populated)
+
+        rule.onNodeWithTag("digest_open_com.whatsapp").assertDoesNotExist()
+        rule.onNodeWithTag("digest_open_com.google.android.gm").assertDoesNotExist()
+    }
+
+    @Test
+    fun tappingANotificationOpensItsApp() {
+        val calls = show(whatsappExpanded)
+
+        rule.onNodeWithText("Mehmet").performClick()
+
+        assertEquals(listOf("open:com.whatsapp"), calls.log)
     }
 }

@@ -28,6 +28,9 @@ class SettingsDataStore @Inject constructor(
     override val breakMinutes: Flow<Int> =
         intSetting(KEY_BREAK_MINUTES, SettingsDefaults.BREAK_MINUTES, SettingsDefaults.BREAK_RANGE)
 
+    override val longBreakMinutes: Flow<Int> =
+        intSetting(KEY_LONG_BREAK_MINUTES, SettingsDefaults.LONG_BREAK_MINUTES, SettingsDefaults.LONG_BREAK_RANGE)
+
     override val retentionDays: Flow<Int> =
         intSetting(KEY_RETENTION_DAYS, SettingsDefaults.RETENTION_DAYS, SettingsDefaults.RETENTION_RANGE)
 
@@ -40,6 +43,9 @@ class SettingsDataStore @Inject constructor(
 
     override suspend fun setBreakMinutes(minutes: Int) =
         write(KEY_BREAK_MINUTES, minutes, SettingsDefaults.BREAK_RANGE)
+
+    override suspend fun setLongBreakMinutes(minutes: Int) =
+        write(KEY_LONG_BREAK_MINUTES, minutes, SettingsDefaults.LONG_BREAK_RANGE)
 
     override suspend fun setRetentionDays(days: Int) =
         write(KEY_RETENTION_DAYS, days, SettingsDefaults.RETENTION_RANGE)
@@ -56,6 +62,7 @@ class SettingsDataStore @Inject constructor(
         val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val KEY_FOCUS_MINUTES = intPreferencesKey("focus_minutes")
         val KEY_BREAK_MINUTES = intPreferencesKey("break_minutes")
+        val KEY_LONG_BREAK_MINUTES = intPreferencesKey("long_break_minutes")
         val KEY_RETENTION_DAYS = intPreferencesKey("retention_days")
     }
 }

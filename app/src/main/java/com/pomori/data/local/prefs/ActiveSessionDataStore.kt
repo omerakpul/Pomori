@@ -2,6 +2,7 @@ package com.pomori.data.local.prefs
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -36,6 +37,7 @@ class ActiveSessionDataStore @Inject constructor(
             it[KEY_END_AT] = session.endAt
             it[KEY_TYPE] = session.type.name
             it[KEY_PLANNED_MS] = session.plannedDurationMs
+            it[KEY_LONG_BREAK] = session.isLongBreak
         }
     }
 
@@ -50,7 +52,14 @@ class ActiveSessionDataStore @Inject constructor(
         val type = this[KEY_TYPE]?.let { name -> SessionType.entries.firstOrNull { it.name == name } }
             ?: return null
         val planned = this[KEY_PLANNED_MS] ?: return null
-        return ActiveSession(sessionId = id, type = type, endAt = endAt, plannedDurationMs = planned)
+        return ActiveSession(
+            sessionId = id,
+            type = type,
+            endAt = endAt,
+            plannedDurationMs = planned,
+            // Alan sonradan eklendi: eski kayıtlarda yok, kısa mola sayılır.
+            isLongBreak = this[KEY_LONG_BREAK] ?: false,
+        )
     }
 
     private companion object {
@@ -58,6 +67,7 @@ class ActiveSessionDataStore @Inject constructor(
         val KEY_ID = longPreferencesKey("active_session_id")
         val KEY_END_AT = longPreferencesKey("active_end_at")
         val KEY_TYPE = stringPreferencesKey("active_type")
+        val KEY_LONG_BREAK = booleanPreferencesKey("active_long_break")
         val KEY_PLANNED_MS = longPreferencesKey("active_planned_ms")
     }
 }

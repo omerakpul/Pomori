@@ -70,7 +70,7 @@ class FocusForegroundService : Service() {
                 }
 
                 is TimerState.Break -> {
-                    show(FocusNotifications.running(this, active!!.type, state.endAt))
+                    show(FocusNotifications.running(this, active!!.type, state.endAt, state.isLong))
                     delay((state.endAt - now).coerceAtLeast(0))
                     endSession(EndReason.TIME_UP)
                     FocusNotifications.notifyAlert(this, FocusNotifications.breakDone(this))

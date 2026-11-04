@@ -51,7 +51,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] WorkManager ile eski bildirimleri silme işi (periyodik)
 - [x] Compose UI testleri (sayaç ve özet ekranları)
 - [x] Koyu tema, erişilebilirlik (içerik açıklamaları, yeterli kontrast)
-- [ ] Uygulama ikonu ve adaptive icon
+- [x] Uygulama ikonu ve adaptive icon
 - [ ] Release APK imzalama ve GitHub Releases'e yükleme
 
 ## README kontrol listesi (CV için en önemli kısım)

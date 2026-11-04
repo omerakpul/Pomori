@@ -15,6 +15,9 @@ interface SettingsStore {
     /** Mola süresi, dakika. */
     val breakMinutes: Flow<Int>
 
+    /** Uzun mola süresi, dakika. */
+    val longBreakMinutes: Flow<Int>
+
     /** Yakalanan bildirimlerin kaç gün saklanacağı. */
     val retentionDays: Flow<Int>
 
@@ -23,6 +26,8 @@ interface SettingsStore {
     suspend fun setFocusMinutes(minutes: Int)
 
     suspend fun setBreakMinutes(minutes: Int)
+
+    suspend fun setLongBreakMinutes(minutes: Int)
 
     suspend fun setRetentionDays(days: Int)
 }

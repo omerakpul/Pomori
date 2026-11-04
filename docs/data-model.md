@@ -133,6 +133,7 @@ interface ExceptionDao {
 |---|---|---|
 | focus_minutes | Int | 25 |
 | break_minutes | Int | 5 |
+| long_break_minutes | Int | 15 (aralık 1..120). Her 4. tamamlanan odak seansından sonra mola uzun olur; sayım bugün tamamlanan odak seanslarından türetilir, ayrıca saklanmaz |
 | retention_days | Int | 7 |
 | onboarding_done | Boolean | false |
 
@@ -143,6 +144,7 @@ interface ExceptionDao {
 | active_end_at | Long | Bitiş zamanı epoch ms |
 | active_type | String | FOCUS / BREAK |
 | active_planned_ms | Long | Planlanan süre (ilerleme halkası için; Hafta 1'de eklendi) |
+| active_long_break | Boolean | Çalışan mola uzun mu? Sonradan eklendi; eski kayıtlarda yoktur, false sayılır |
 
 ## Saf iş mantığı sınıfları
 

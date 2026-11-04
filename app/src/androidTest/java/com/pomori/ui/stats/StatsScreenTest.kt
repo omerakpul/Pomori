@@ -2,13 +2,13 @@ package com.pomori.ui.stats
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.pomori.R
+import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
 import com.pomori.ui.pomoriComposeRule
 import com.pomori.ui.str
@@ -17,6 +17,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class StatsScreenTest {
@@ -129,8 +132,54 @@ class StatsScreenTest {
     fun backButton_goesBack() {
         show(populated)
 
-        rule.onNode(hasText(rule.str(R.string.stats_back))).performClick()
+        // Geri artık simgeli bir düğme: metni yok, ekran okuyucu için açıklaması var.
+        rule.onNodeWithContentDescription(rule.str(R.string.action_back)).performClick()
 
         assertEquals(listOf("back"), calls)
+    }
+
+    // --- günlük grafik ---
+
+    private val today = LocalDate.of(2026, 11, 4)
+    private val dailyMinutes = listOf(50L, 100L, 0L, 75L, 125L, 25L, 155L)
+    private val week = dailyMinutes.mapIndexed { i, m -> DayFocus(today.minusDays((6 - i).toLong()), m * minute) }
+
+    private fun barDescription(index: Int, durationText: String): String {
+        val dayName = week[index].date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+        return rule.str(R.string.stats_bar_description, dayName, durationText)
+    }
+
+    @Test
+    fun chart_showsAnEntryForEachOfTheSevenDays() {
+        show(populated.copy(dailyFocus = week))
+
+        rule.onNodeWithTag("stats_chart").assertIsDisplayed()
+        repeat(7) { rule.onNodeWithTag("stats_bar_$it").assertExists() }
+        rule.onNodeWithText(rule.str(R.string.stats_chart_title)).assertIsDisplayed()
+    }
+
+    @Test
+    fun chart_barsAreReadAsDayAndDuration() {
+        show(populated.copy(dailyFocus = week))
+
+        // 155 dk = 2 sa 35 dk; 0 olan gün de "0 dk" diye okunur.
+        rule.onNodeWithContentDescription(barDescription(6, rule.str(R.string.stats_duration_hm, 2, 35))).assertExists()
+        rule.onNodeWithContentDescription(barDescription(2, rule.str(R.string.stats_duration_m, 0))).assertExists()
+        rule.onNodeWithContentDescription(barDescription(0, rule.str(R.string.stats_duration_m, 50))).assertExists()
+    }
+
+    @Test
+    fun chart_isHiddenWhenNoDayHasFocusTime() {
+        show(populated.copy(dailyFocus = week.map { it.copy(focusMs = 0) }))
+
+        rule.onNodeWithTag("stats_chart").assertDoesNotExist()
+        rule.onNodeWithText(rule.str(R.string.stats_chart_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun chart_isHiddenWithoutDailyData() {
+        show(populated)
+
+        rule.onNodeWithTag("stats_chart").assertDoesNotExist()
     }
 }

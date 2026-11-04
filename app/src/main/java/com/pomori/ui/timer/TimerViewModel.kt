@@ -12,6 +12,7 @@ import com.pomori.domain.timer.TimerState
 import com.pomori.domain.timer.toTimerState
 import com.pomori.domain.usecase.EndReason
 import com.pomori.domain.usecase.EndSession
+import com.pomori.domain.usecase.GetBreakPlan
 import com.pomori.domain.usecase.StartSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -35,6 +36,7 @@ class TimerViewModel @Inject constructor(
     private val startSession: StartSession,
     private val endSession: EndSession,
     private val settings: SettingsStore,
+    private val getBreakPlan: GetBreakPlan,
 ) : ViewModel() {
 
     /**
@@ -45,13 +47,15 @@ class TimerViewModel @Inject constructor(
     val uiState: StateFlow<TimerUiState> = combine(
         activeSessionStore.active.flatMapLatest { active -> ticking(active) },
         settings.focusMinutes,
-    ) { state, focusMinutes ->
-        // Boştayken, başlatılınca çalışacak süreyi (ayardaki odak süresini) göster.
-        if (state.phase == TimerPhase.IDLE) {
-            val ms = focusMinutes * MS_PER_MINUTE
-            state.copy(remainingMs = ms, totalMs = ms)
-        } else {
-            state
+        getBreakPlan(),
+    ) { ticking, focusMinutes, plan ->
+        val state = ticking.copy(cycleDone = plan.focusDoneInCycle)
+        when (state.phase) {
+            // Boştayken, başlatılınca çalışacak süreyi (ayardaki odak süresini) göster.
+            TimerPhase.IDLE -> (focusMinutes * MS_PER_MINUTE).let { ms -> state.copy(remainingMs = ms, totalMs = ms) }
+            // Bekleyen molanın uzun mu kısa mı olacağı, tamamlanan odak sayısından gelir.
+            TimerPhase.BREAK_PENDING -> state.copy(isLongBreak = plan.isLong, totalMs = plan.durationMs)
+            else -> state
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TimerUiState())
 
@@ -96,7 +100,11 @@ class TimerViewModel @Inject constructor(
     // (bitiş zamanı başlangıçta DataStore'a yazılır).
     fun startFocus() = launch { startSession(SessionType.FOCUS, settings.focusMinutes.first() * MS_PER_MINUTE) }
 
-    fun startBreak() = launch { startSession(SessionType.BREAK, settings.breakMinutes.first() * MS_PER_MINUTE) }
+    // Uzun mu kısa mı olacağı o anki plandan okunur ve kayda yazılır; sonradan ayar değişse de mola aynı kalır.
+    fun startBreak() = launch {
+        val plan = getBreakPlan().first()
+        startSession(SessionType.BREAK, plan.durationMs, plan.isLong)
+    }
 
     fun cancelFocus() = launch { endSession(EndReason.CANCEL) }
 

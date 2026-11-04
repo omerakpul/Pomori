@@ -1,5 +1,8 @@
 package com.pomori.ui.settings
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,15 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -30,10 +35,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +51,12 @@ import com.pomori.R
 import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.InstalledApp
 import com.pomori.domain.model.SettingsDefaults
+import com.pomori.ui.components.IconBadge
+import com.pomori.ui.components.IconLabel
+import com.pomori.ui.components.InitialAvatar
+import com.pomori.ui.components.ScreenHeader
+import com.pomori.ui.components.SectionHeader
+import com.pomori.ui.components.SoftCard
 import com.pomori.ui.theme.PomoriTheme
 
 /** Odak süresi 5'er dakika, mola ve saklama süresi 1'er birim değişir. */
@@ -64,6 +76,7 @@ fun SettingsRoute(
         state = state,
         onFocusMinutesChange = viewModel::setFocusMinutes,
         onBreakMinutesChange = viewModel::setBreakMinutes,
+        onLongBreakMinutesChange = viewModel::setLongBreakMinutes,
         onRetentionDaysChange = viewModel::setRetentionDays,
         onAddSender = viewModel::addSender,
         onAddApp = viewModel::addApp,
@@ -84,34 +97,34 @@ fun SettingsScreen(
     onRemoveRule: (ExceptionRule) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongBreakMinutesChange: (Int) -> Unit = {},
 ) {
     var showAppPicker by remember { mutableStateOf(false) }
+    val scheme = MaterialTheme.colorScheme
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .testTag("settings_list"),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack, modifier = Modifier.testTag("settings_back")) {
-                    Text(stringResource(R.string.settings_back))
-                }
-            }
-            Text(
-                text = stringResource(R.string.settings_title),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.semantics { heading() },
+            ScreenHeader(
+                title = stringResource(R.string.settings_title),
+                onBack = onBack,
+                backTag = "settings_back",
             )
         }
 
-        item { SectionTitle(R.string.settings_section_durations) }
+        item { SectionHeader(stringResource(R.string.settings_section_durations), Modifier.padding(horizontal = 16.dp)) }
         item {
-            Card(Modifier.fillMaxWidth()) {
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     StepperRow(
+                        icon = R.drawable.ic_schedule,
+                        tint = scheme.primary,
                         label = stringResource(R.string.settings_focus_duration),
                         valueText = stringResource(R.string.settings_minutes_format, state.focusMinutes),
                         canDecrement = state.focusMinutes > SettingsDefaults.FOCUS_RANGE.first,
@@ -120,8 +133,10 @@ fun SettingsScreen(
                         onIncrement = { onFocusMinutesChange(state.focusMinutes + FOCUS_STEP) },
                         tag = "settings_focus",
                     )
-                    HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = scheme.outlineVariant)
                     StepperRow(
+                        icon = R.drawable.ic_coffee,
+                        tint = scheme.secondary,
                         label = stringResource(R.string.settings_break_duration),
                         valueText = stringResource(R.string.settings_minutes_format, state.breakMinutes),
                         canDecrement = state.breakMinutes > SettingsDefaults.BREAK_RANGE.first,
@@ -130,15 +145,35 @@ fun SettingsScreen(
                         onIncrement = { onBreakMinutesChange(state.breakMinutes + 1) },
                         tag = "settings_break",
                     )
+                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = scheme.outlineVariant)
+                    StepperRow(
+                        icon = R.drawable.ic_coffee,
+                        tint = scheme.secondary,
+                        label = stringResource(R.string.settings_long_break_duration),
+                        valueText = stringResource(R.string.settings_minutes_format, state.longBreakMinutes),
+                        canDecrement = state.longBreakMinutes > SettingsDefaults.LONG_BREAK_RANGE.first,
+                        canIncrement = state.longBreakMinutes < SettingsDefaults.LONG_BREAK_RANGE.last,
+                        onDecrement = { onLongBreakMinutesChange(state.longBreakMinutes - FOCUS_STEP) },
+                        onIncrement = { onLongBreakMinutesChange(state.longBreakMinutes + FOCUS_STEP) },
+                        tag = "settings_long_break",
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_long_break_hint, SettingsDefaults.LONG_BREAK_EVERY),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                    )
                 }
             }
         }
 
-        item { SectionTitle(R.string.settings_section_retention) }
+        item { SectionHeader(stringResource(R.string.settings_section_retention), Modifier.padding(horizontal = 16.dp)) }
         item {
-            Card(Modifier.fillMaxWidth()) {
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     StepperRow(
+                        icon = R.drawable.ic_delete,
+                        tint = scheme.tertiary,
                         label = stringResource(R.string.settings_retention),
                         valueText = stringResource(R.string.settings_days_format, state.retentionDays),
                         canDecrement = state.retentionDays > SettingsDefaults.RETENTION_RANGE.first,
@@ -150,28 +185,34 @@ fun SettingsScreen(
                     Text(
                         text = stringResource(R.string.settings_retention_hint),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = scheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                     )
                 }
             }
         }
 
-        item { SectionTitle(R.string.settings_section_exceptions) }
+        item { SectionHeader(stringResource(R.string.settings_section_exceptions), Modifier.padding(horizontal = 16.dp)) }
         item {
             Text(
                 text = stringResource(R.string.settings_exceptions_hint),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 4.dp),
             )
         }
         if (state.rules.isEmpty()) {
             item {
-                Text(
-                    text = stringResource(R.string.settings_exceptions_empty),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.testTag("settings_rules_empty"),
-                )
+                SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_exceptions_empty),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = scheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .testTag("settings_rules_empty"),
+                    )
+                }
             }
         } else {
             items(state.rules, key = { "${it.rule::class.simpleName}:${it.rule.value}" }) { item ->
@@ -184,8 +225,10 @@ fun SettingsScreen(
                 onClick = { showAppPicker = true },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .heightIn(min = 52.dp)
                     .testTag("settings_add_app"),
-            ) { Text(stringResource(R.string.settings_add_app)) }
+            ) { IconLabel(R.drawable.ic_apps, stringResource(R.string.settings_add_app)) }
         }
     }
 
@@ -202,19 +245,9 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SectionTitle(titleRes: Int) {
-    Text(
-        text = stringResource(titleRes),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .padding(top = 8.dp)
-            .semantics { heading() },
-    )
-}
-
-@Composable
 private fun StepperRow(
+    @DrawableRes icon: Int,
+    tint: Color,
     label: String,
     valueText: String,
     canDecrement: Boolean,
@@ -228,53 +261,66 @@ private fun StepperRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        IconBadge(icon = icon, tint = tint)
         Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        OutlinedButton(
-            onClick = onDecrement,
-            enabled = canDecrement,
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier
-                .size(TOUCH_TARGET)
-                .semantics { contentDescription = decreaseDescription }
-                .testTag("${tag}_dec"),
-        ) { Text("−", style = MaterialTheme.typography.titleLarge) }
-        Text(
-            text = valueText,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            // Tek satır: büyük yazı tipinde "25 dk" ikiye bölünmez, bunun yerine etiket daralır.
-            maxLines = 1,
-            softWrap = false,
-            // En az genişlik: normal boyutta "5 dk" ve "25 dk" aynı yeri kaplar, düğmeler satırlar arasında
-            // hizalı kalır; büyük yazı tipinde değer gerektiği kadar genişler.
-            modifier = Modifier
-                .widthIn(min = 64.dp)
-                .testTag("${tag}_value"),
-        )
-        OutlinedButton(
-            onClick = onIncrement,
-            enabled = canIncrement,
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier
-                .size(TOUCH_TARGET)
-                .semantics { contentDescription = increaseDescription }
-                .testTag("${tag}_inc"),
-        ) { Text("+", style = MaterialTheme.typography.titleLarge) }
+        // Tek parça "segment" kontrol: [ - | değer | + ]. Üç ayrı daire düğmeden çok daha derli toplu.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp)),
+        ) {
+            IconButton(
+                onClick = onDecrement,
+                enabled = canDecrement,
+                modifier = Modifier
+                    .size(TOUCH_TARGET)
+                    .semantics { contentDescription = decreaseDescription }
+                    .testTag("${tag}_dec"),
+            ) { Icon(painterResource(R.drawable.ic_remove), contentDescription = null) }
+            Text(
+                text = valueText,
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                // Tek satır: büyük yazı tipinde "25 dk" ikiye bölünmez, bunun yerine etiket daralır.
+                maxLines = 1,
+                softWrap = false,
+                // En az genişlik: normal boyutta "5 dk" ve "25 dk" aynı yeri kaplar, düğmeler satırlar arasında
+                // hizalı kalır; büyük yazı tipinde değer gerektiği kadar genişler.
+                modifier = Modifier
+                    .widthIn(min = 56.dp)
+                    .testTag("${tag}_value"),
+            )
+            IconButton(
+                onClick = onIncrement,
+                enabled = canIncrement,
+                modifier = Modifier
+                    .size(TOUCH_TARGET)
+                    .semantics { contentDescription = increaseDescription }
+                    .testTag("${tag}_inc"),
+            ) { Icon(painterResource(R.drawable.ic_add), contentDescription = null) }
+        }
     }
 }
 
 @Composable
 private fun RuleRow(item: RuleItem, onRemove: () -> Unit) {
     val removeDescription = stringResource(R.string.settings_remove_rule, item.displayName)
-    Card(Modifier.fillMaxWidth()) {
+    val scheme = MaterialTheme.colorScheme
+    val isApp = item.rule is ExceptionRule.Package
+    SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 4.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (isApp) {
+                InitialAvatar(name = item.displayName)
+            } else {
+                IconBadge(icon = R.drawable.ic_person, tint = scheme.secondary)
+            }
             Column(Modifier.weight(1f)) {
                 Text(
                     text = item.displayName,
@@ -283,22 +329,23 @@ private fun RuleRow(item: RuleItem, onRemove: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = stringResource(
-                        when (item.rule) {
-                            is ExceptionRule.Package -> R.string.settings_rule_type_app
-                            is ExceptionRule.Sender -> R.string.settings_rule_type_sender
-                        },
-                    ),
+                    text = stringResource(if (isApp) R.string.settings_rule_type_app else R.string.settings_rule_type_sender),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = scheme.onSurfaceVariant,
                 )
             }
-            TextButton(
+            IconButton(
                 onClick = onRemove,
                 modifier = Modifier
                     .semantics { contentDescription = removeDescription }
                     .testTag("settings_remove_${item.rule.value}"),
-            ) { Text(stringResource(R.string.settings_remove)) }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_delete),
+                    contentDescription = null,
+                    tint = scheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -307,6 +354,7 @@ private fun RuleRow(item: RuleItem, onRemove: () -> Unit) {
 private fun AddSenderRow(onAddSender: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     Row(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -314,7 +362,9 @@ private fun AddSenderRow(onAddSender: (String) -> Unit) {
             value = text,
             onValueChange = { text = it },
             label = { Text(stringResource(R.string.settings_sender_label)) },
+            leadingIcon = { Icon(painterResource(R.drawable.ic_person), contentDescription = null) },
             singleLine = true,
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier
                 .weight(1f)
                 .testTag("settings_sender_input"),
@@ -325,7 +375,10 @@ private fun AddSenderRow(onAddSender: (String) -> Unit) {
                 text = ""
             },
             enabled = text.isNotBlank(),
-            modifier = Modifier.testTag("settings_sender_add"),
+            modifier = Modifier
+                .heightIn(min = 56.dp)
+                .padding(top = 8.dp)
+                .testTag("settings_sender_add"),
         ) { Text(stringResource(R.string.settings_add)) }
     }
 }
@@ -350,6 +403,7 @@ private fun AppPickerDialog(
                     onValueChange = { query = it },
                     label = { Text(stringResource(R.string.settings_pick_app_search)) },
                     singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("settings_app_search"),
@@ -363,17 +417,23 @@ private fun AppPickerDialog(
                 } else {
                     LazyColumn(Modifier.heightIn(max = 320.dp).testTag("settings_app_list")) {
                         items(filtered, key = { it.packageName }) { app ->
-                            Text(
-                                text = app.label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { onPick(app) }
-                                    .padding(vertical = 12.dp)
+                                    .padding(vertical = 8.dp)
                                     .testTag("settings_app_${app.packageName}"),
-                            )
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                InitialAvatar(name = app.label, size = 36.dp)
+                                Text(
+                                    text = app.label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
@@ -385,7 +445,7 @@ private fun AppPickerDialog(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 1000)
 @Composable
 private fun SettingsScreenPreview() {
     PomoriTheme {

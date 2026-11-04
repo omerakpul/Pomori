@@ -4,10 +4,15 @@ package com.pomori.domain.model
 object SettingsDefaults {
     const val FOCUS_MINUTES = 25
     const val BREAK_MINUTES = 5
+    const val LONG_BREAK_MINUTES = 15
+
+    /** Her bu kadar tamamlanan odak seansından sonra mola uzun olur (klasik Pomodoro: 4). */
+    const val LONG_BREAK_EVERY = 4
     const val RETENTION_DAYS = 7
 
     val FOCUS_RANGE = 1..120
     val BREAK_RANGE = 1..60
+    val LONG_BREAK_RANGE = 1..120
     val RETENTION_RANGE = 1..30
 }
 
