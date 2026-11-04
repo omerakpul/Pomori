@@ -6,3 +6,8 @@ import javax.inject.Qualifier
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ActiveSessionPrefs
+
+/** Kullanıcı ayarları için DataStore (aktif seans DataStore'undan ayrıdır). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SettingsPrefs

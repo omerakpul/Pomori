@@ -13,6 +13,15 @@
     <string name="action_start_break">Molayı başlat</string>
     <string name="action_skip_break">Molayı atla</string>
 
+    <string name="onboarding_title">Pomori\'ye hoş geldin</string>
+    <string name="onboarding_why_title">Neden bildirim erişimi isteyeceğiz?</string>
+    <string name="onboarding_why_body">Odak seansın sürerken gelen bildirimleri senin yerine tutarız. Seans bitince hepsini tek bir özette görürsün, dikkatin dağılmaz.</string>
+    <string name="onboarding_data_title">Neyi saklıyoruz?</string>
+    <string name="onboarding_data_body">Yakaladığımız her bildirim için uygulama adı, başlık, metin ve zaman bilgisi saklanır. İstisna olarak belirlediğin uygulamalara dokunmayız.</string>
+    <string name="onboarding_privacy_title">Verin cihazından çıkmaz</string>
+    <string name="onboarding_privacy_body">Uygulamanın internet izni yok, hiçbir veri gönderilmez. Kayıtlar varsayılan olarak 7 gün sonra otomatik silinir.</string>
+    <string name="onboarding_continue">Anladım, devam et</string>
+
     <string name="channel_timer_name">Sayaç</string>
     <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>
     <string name="channel_alerts_name">Seans bitişi</string>
