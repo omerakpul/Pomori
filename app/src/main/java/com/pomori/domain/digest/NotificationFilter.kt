@@ -17,12 +17,24 @@ data class IncomingNotification(
     val isGroupSummary: Boolean,
     /** Pomori'nin kendi bildirimleri (sayaç, seans bitişi). */
     val isOwnApp: Boolean,
+    /** Uygulamanın bildirime verdiği kategori (`Notification.category`), yoksa `null`. */
+    val category: String? = null,
+    /** Tam ekran niyeti olan bildirim: gelen arama, çalan alarm gibi hemen ilgilenilmesi gerekenler. */
+    val hasFullScreenIntent: Boolean = false,
+    /** Kullanıcı kapatana kadar sesi tekrarlayan bildirim (`FLAG_INSISTENT`): çalan arama ya da alarm. */
+    val isInsistent: Boolean = false,
 )
 
 enum class IgnoreReason {
     ONGOING,
     GROUP_SUMMARY,
     OWN_APP,
+
+    /**
+     * Zamana duyarlı: gelen arama, alarm, hatırlatma, takvim etkinliği, yol tarifi gibi, kaçırılırsa
+     * zarar veren bildirimler. Yakalanıp gizlenmez, olduğu gibi gelir.
+     */
+    TIME_SENSITIVE,
 
     /** Kullanıcının istisna listesine takıldı: olduğu gibi gelmeye devam eder. */
     EXCEPTED,
@@ -38,6 +50,37 @@ object NotificationFilter {
         notification.isOwnApp -> IgnoreReason.OWN_APP
         notification.isOngoing -> IgnoreReason.ONGOING
         notification.isGroupSummary -> IgnoreReason.GROUP_SUMMARY
+        isTimeSensitive(notification) -> IgnoreReason.TIME_SENSITIVE
         else -> null
     }
+
+    /**
+     * Odak sırasında bile görülmesi gereken bildirimler. Üç işaretten biri yeter, çünkü uygulamalar
+     * kategoriyi her zaman doldurmaz: tam ekran niyeti ve ısrarlı ses (çalan telefon/alarm) kategori
+     * olmasa da yakalar.
+     */
+    private fun isTimeSensitive(n: IncomingNotification): Boolean =
+        n.hasFullScreenIntent || n.isInsistent || n.category in TIME_SENSITIVE_CATEGORIES
+
+    /**
+     * `Notification.CATEGORY_*` değerleri (dize olarak: bazıları yeni Android sürümlerinde eklendi).
+     * Mesaj, e-posta, sosyal ve tanıtım kategorileri bilerek listede yok: özetin asıl konusu onlar.
+     * Cevapsız arama da yok, zaten kaçırılmış bir bilgi; özette görünmesi doğru.
+     */
+    private val TIME_SENSITIVE_CATEGORIES = setOf(
+        "call", // gelen/süren arama
+        "alarm", // alarm, zamanlayıcı
+        "stopwatch",
+        "reminder",
+        "event", // takvim etkinliği
+        "navigation",
+        "location_sharing",
+        "workout",
+        "transport", // medya denetimleri
+        "progress", // indirme/yükleme ilerlemesi
+        "service",
+        "status",
+        "system",
+        "error",
+    )
 }

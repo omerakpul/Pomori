@@ -62,6 +62,7 @@ Idle ──start(FOCUS)──▶ Focus ──timeUp──▶ BreakPending ──
 4. Değilse bildirimden paket adı, uygulama adı, başlık, metin ve zaman damgası çıkarılır, `CapturedNotification` olarak Room'a yazılır.
 5. Ardından `cancelNotification(key)` ile bildirim sistemden kaldırılır.
 6. Ongoing (kalıcı) bildirimler, grup özeti bildirimleri ve kendi uygulamamızın bildirimleri yok sayılır.
+7. **Zamana duyarlı bildirimler de yok sayılır** (gelen arama, alarm, zamanlayıcı, hatırlatma, takvim etkinliği, yol tarifi vb.): kategorisi bunlardan biri olan, tam ekran niyeti taşıyan ya da kullanıcı kapatana kadar sesi tekrarlayan (`FLAG_INSISTENT`) bildirimler yakalanıp gizlenmez, olduğu gibi gelir. Yakalamanın amacı dikkat dağıtıcıları ertelemek; kaçırılması zarar veren bildirimleri gizlemek değil. Mesaj, e-posta, sosyal ve tanıtım kategorileri bilerek özete girer.
 
 Dikkat: Listener'ın ana iş parçacığını bloklamaması için Room yazımı kendi `CoroutineScope`'unda (SupervisorJob + Dispatchers.IO) yapılır.
 

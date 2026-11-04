@@ -36,6 +36,8 @@ class CaptureNotificationTest {
         isOngoing: Boolean = false,
         isGroupSummary: Boolean = false,
         isOwnApp: Boolean = false,
+        category: String? = null,
+        hasFullScreenIntent: Boolean = false,
     ) = IncomingNotification(
         packageName = "com.whatsapp",
         appLabel = "WhatsApp",
@@ -45,6 +47,8 @@ class CaptureNotificationTest {
         isOngoing = isOngoing,
         isGroupSummary = isGroupSummary,
         isOwnApp = isOwnApp,
+        category = category,
+        hasFullScreenIntent = hasFullScreenIntent,
     )
 
     @Test
@@ -206,5 +210,41 @@ class CaptureNotificationTest {
 
         assertTrue(failure is IllegalStateException)
         assertTrue(repo.rows.isEmpty())
+    }
+
+    // --- zamana duyarlı bildirimler ---
+
+    @Test
+    fun `an incoming call during focus is neither stored nor hidden`() = runTest {
+        val result = useCase(focusSession())(incoming(category = "call", hasFullScreenIntent = true))
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.TIME_SENSITIVE), result)
+        assertTrue(repo.rows.isEmpty())
+    }
+
+    @Test
+    fun `an alarm during focus is neither stored nor hidden`() = runTest {
+        val result = useCase(focusSession())(incoming(category = "alarm"))
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.TIME_SENSITIVE), result)
+        assertTrue(repo.rows.isEmpty())
+    }
+
+    @Test
+    fun `a chat message during focus is still captured`() = runTest {
+        val result = useCase(focusSession())(incoming(category = "msg"))
+
+        assertTrue(result is CaptureResult.Captured)
+        assertEquals(1, repo.rows.size)
+    }
+
+    @Test
+    fun `a call is left alone even when the exception rules cannot be read`() = runTest {
+        exceptions.readFailure = IllegalStateException("db unavailable")
+
+        // Zamana duyarlı olan, kurallar okunmadan karara bağlanır: veritabanı hatası aramayı gizletmez.
+        val result = useCase(focusSession())(incoming(category = "call"))
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.TIME_SENSITIVE), result)
     }
 }
