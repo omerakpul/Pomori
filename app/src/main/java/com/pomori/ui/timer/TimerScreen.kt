@@ -36,7 +36,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardActions
+import com.pomori.domain.model.MAX_LABEL_LENGTH
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -44,6 +47,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +60,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -91,6 +98,7 @@ fun TimerRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val label by viewModel.label.collectAsStateWithLifecycle()
+    val recentLabels by viewModel.recentLabels.collectAsStateWithLifecycle()
     val pendingDigest by viewModel.pendingDigestSessionId.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val accessGranted = rememberNotificationAccessGranted()
@@ -128,6 +136,7 @@ fun TimerRoute(
         onCancelFocus = viewModel::cancelFocus,
         onInterrupt = viewModel::interrupt,
         label = label,
+        recentLabels = recentLabels,
         onLabelChange = viewModel::setLabel,
         onStartBreak = viewModel::startBreak,
         onSkipBreak = viewModel::skipBreak,
@@ -151,6 +160,7 @@ fun TimerScreen(
     modifier: Modifier = Modifier,
     onInterrupt: () -> Unit = {},
     label: String = "",
+    recentLabels: List<String> = emptyList(),
     onLabelChange: (String) -> Unit = {},
     notificationAccessGranted: Boolean = true,
     onOpenNotificationAccess: () -> Unit = {},
@@ -214,16 +224,11 @@ fun TimerScreen(
         }
 
         if (state.phase == TimerPhase.IDLE) {
-            OutlinedTextField(
-                value = label,
-                onValueChange = onLabelChange,
-                singleLine = true,
-                label = { Text(stringResource(R.string.label_field)) },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 4.dp)
-                    .testTag(TAG_LABEL),
+            LabelPill(
+                label = label,
+                recent = recentLabels,
+                onChange = onLabelChange,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp),
             )
         }
 
@@ -314,6 +319,104 @@ fun TimerScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * Seans etiketi: boşken "+ Etiket" hapı, doluyken etiketi ve silme işaretini gösteren dolu hap. Dokununca küçük bir
+ * pencere açılır: yazı alanı ve önceki seanslardan öneri çipleri. Düz bir yazı kutusu yerine, modlar gibi hafif kalır.
+ */
+@Composable
+private fun LabelPill(label: String, recent: List<String>, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    var editing by remember { mutableStateOf(false) }
+    val filled = label.isNotBlank()
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .heightIn(min = 48.dp)
+                .clickable(role = Role.Button, onClick = { editing = true })
+                .testTag(TAG_LABEL),
+        ) {
+            Text(
+                text = if (filled) "# $label" else stringResource(R.string.label_add),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (filled) scheme.primary else scheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(
+                        color = if (filled) scheme.primary.copy(alpha = 0.16f) else Color.Transparent,
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (filled) scheme.primary else scheme.outlineVariant,
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .padding(horizontal = 16.dp, vertical = 9.dp),
+            )
+        }
+        if (filled) {
+            IconButton(onClick = { onChange("") }, modifier = Modifier.testTag(TAG_LABEL_CLEAR)) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_remove),
+                    contentDescription = stringResource(R.string.label_clear),
+                    tint = scheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+    if (editing) {
+        var draft by remember { mutableStateOf(label) }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text(stringResource(R.string.label_dialog_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it.take(MAX_LABEL_LENGTH) },
+                        singleLine = true,
+                        placeholder = { Text(stringResource(R.string.label_placeholder)) },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { onChange(draft); editing = false }),
+                        modifier = Modifier.fillMaxWidth().testTag(TAG_LABEL_INPUT),
+                    )
+                    if (recent.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            recent.forEach { suggestion ->
+                                Text(
+                                    text = suggestion,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = scheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    modifier = Modifier
+                                        .clickable { onChange(suggestion); editing = false }
+                                        .border(1.dp, scheme.outlineVariant, RoundedCornerShape(14.dp))
+                                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onChange(draft); editing = false }) {
+                    Text(stringResource(R.string.label_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editing = false }) { Text(stringResource(R.string.label_cancel)) }
+            },
+        )
     }
 }
 
@@ -632,6 +735,8 @@ const val TAG_START_FOCUS = "timer_start_focus"
 const val TAG_CANCEL = "timer_cancel"
 const val TAG_INTERRUPT = "timer_interrupt"
 const val TAG_LABEL = "timer_label"
+const val TAG_LABEL_CLEAR = "timer_label_clear"
+const val TAG_LABEL_INPUT = "timer_label_input"
 const val TAG_START_BREAK = "timer_start_break"
 const val TAG_SKIP = "timer_skip"
 const val TAG_SETTINGS = "timer_settings"

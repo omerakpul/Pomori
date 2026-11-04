@@ -42,6 +42,14 @@ class FakeSessionRepository : SessionRepository {
 
     override suspend fun getById(id: Long): FocusSession? = rows[id]
 
+    override fun observeRecentLabels(limit: Int): Flow<List<String>> = version.map {
+        rows.values.filter { it.label != null }
+            .sortedByDescending { it.startedAt }
+            .map { it.label!! }
+            .distinctBy { it.lowercase() }
+            .take(limit)
+    }
+
     override suspend fun recordInterruption(id: Long): Boolean {
         val row = rows[id]?.takeIf { it.status == SessionStatus.RUNNING } ?: return false
         rows[id] = row.copy(interruptions = row.interruptions + 1)

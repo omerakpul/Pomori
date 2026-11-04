@@ -13,7 +13,12 @@
     <string name="action_start_focus">Odağı başlat</string>
     <string name="action_cancel">İptal</string>
     <string name="action_interrupt">Kesinti</string>
-    <string name="label_field">Etiket (isteğe bağlı)</string>
+    <string name="label_add">+ Etiket</string>
+    <string name="label_clear">Etiketi kaldır</string>
+    <string name="label_dialog_title">Seans etiketi</string>
+    <string name="label_placeholder">Ör. Ders, Kod, Okuma</string>
+    <string name="label_save">Tamam</string>
+    <string name="label_cancel">Vazgeç</string>
     <string name="stats_goal_title">Günlük hedef</string>
     <string name="stats_goal_progress">%1$s / %2$s</string>
     <string name="stats_goal_reached">Bugünün hedefi tamam</string>
