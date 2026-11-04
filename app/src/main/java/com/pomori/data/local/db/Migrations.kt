@@ -30,3 +30,25 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+/**
+ * v2 → v3: `exception_rules` tablosu ve `(type, value)` üzerinde benzersiz indeks eklendi.
+ * SQL, `schemas/.../3.json` ile birebir aynı olmalı; MigrationTest bunu doğrular.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `exception_rules` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `type` TEXT NOT NULL,
+                `value` TEXT NOT NULL
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_exception_rules_type_value` " +
+                "ON `exception_rules` (`type`, `value`)",
+        )
+    }
+}

@@ -44,7 +44,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 ## Hafta 3: İstisnalar, istatistik, cila
 **Hedef:** Kullanılabilir ve paylaşılabilir hale getir.
 
-- [ ] `ExceptionRuleEntity`, DAO, `ExceptionMatcher` + unit testler
+- [x] `ExceptionRuleEntity`, DAO, `ExceptionMatcher` + unit testler
 - [ ] Ayarlar ekranı: süreler, istisna listesi (yüklü uygulamalardan seçme), saklama süresi
 - [ ] Listener'a istisna kontrolünü bağla
 - [ ] `StatsScreen`: haftalık odak süresi, tamamlanan seans, en çok dikkat dağıtan uygulamalar

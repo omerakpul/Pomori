@@ -44,6 +44,55 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun migrate2To3_keepsNotificationsAndAddsAUniqueExceptionRulesTable() {
+        helper.createDatabase(DB_NAME, 2).apply {
+            execSQL(
+                "INSERT INTO focus_sessions (id, type, startedAt, plannedDurationMs, endedAt, status) " +
+                    "VALUES (1, 'FOCUS', 1000, 1500000, NULL, 'COMPLETED')",
+            )
+            execSQL(
+                "INSERT INTO captured_notifications (sessionId, packageName, appLabel, title, text, postedAt) " +
+                    "VALUES (1, 'com.whatsapp', 'WhatsApp', 'Ayşe', 'Selam', 2000)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_2_3)
+
+        db.query("SELECT COUNT(*) FROM captured_notifications").use {
+            it.moveToFirst()
+            assertEquals(1, it.getInt(0))
+        }
+        db.execSQL("INSERT INTO exception_rules (type, value) VALUES ('SENDER', 'Anne')")
+        // Benzersiz indeks: aynı (type, value) ikinci kez eklenemez.
+        val duplicateRejected = try {
+            db.execSQL("INSERT INTO exception_rules (type, value) VALUES ('SENDER', 'Anne')")
+            false
+        } catch (_: android.database.sqlite.SQLiteConstraintException) {
+            true
+        }
+        assertEquals(true, duplicateRejected)
+    }
+
+    @Test
+    fun migrateFromVersion1ThroughEveryStep_reachesTheCurrentSchema() {
+        helper.createDatabase(DB_NAME, 1).apply {
+            execSQL(
+                "INSERT INTO focus_sessions (id, type, startedAt, plannedDurationMs, endedAt, status) " +
+                    "VALUES (1, 'FOCUS', 1000, 1500000, NULL, 'RUNNING')",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_1_2, MIGRATION_2_3)
+
+        db.query("SELECT COUNT(*) FROM focus_sessions").use {
+            it.moveToFirst()
+            assertEquals(1, it.getInt(0))
+        }
+    }
+
     private companion object {
         const val DB_NAME = "migration-test"
     }

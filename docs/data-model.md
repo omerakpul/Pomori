@@ -28,6 +28,7 @@
 |---|---|
 | 1 | `focus_sessions` |
 | 2 | `captured_notifications` eklendi (`MIGRATION_1_2`, `MigrationTest` ile doğrulanır) |
+| 3 | `exception_rules` ve `(type, value)` benzersiz indeksi eklendi (`MIGRATION_2_3`) |
 
 Her şema değişikliğinde sürümü artırın, `Migration` yazın ve `schemas/` altındaki yeni JSON'u commit edin.
 
@@ -153,6 +154,7 @@ interface ExceptionDao {
 `fun isExcepted(packageName: String, title: String?, rules: List<ExceptionRule>): Boolean`
 - Paket kuralı: tam eşleşme.
 - Gönderen kuralı: başlıkta büyük/küçük harf duyarsız içerir kontrolü.
+- Boş ya da yalnızca boşluktan oluşan kural hiçbir şeyle eşleşmez (aksi halde `"".contains("")` her bildirimi istisna sayardı). Kural değerleri `ExceptionRepository.add` içinde kırpılır.
 
 ## Test edilecek sınır durumları
 - Boş bildirim listesi → `total = 0`, boş `apps`.
