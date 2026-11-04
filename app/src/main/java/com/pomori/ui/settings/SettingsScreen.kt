@@ -58,6 +58,7 @@ import com.pomori.ui.components.IconBadge
 import com.pomori.ui.components.IconLabel
 import com.pomori.ui.components.InitialAvatar
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import com.pomori.domain.model.ThemeMode
 import com.pomori.ui.components.ScreenHeader
 import com.pomori.ui.components.SectionHeader
@@ -217,6 +218,10 @@ fun SettingsScreen(
                                     ),
                                 )
                             },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = scheme.primary.copy(alpha = 0.16f),
+                                selectedLabelColor = scheme.primary,
+                            ),
                             modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
                         )
                     }
