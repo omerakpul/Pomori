@@ -15,9 +15,9 @@ data class DayFocus(
     val focusMs: Long,
 )
 
-/** Bir etikete ait tamamlanan odak süresi. [label] null ise etiketsiz seanslardır. */
-data class LabelFocus(
-    val label: String?,
+/** Bir modda ([presetId]) tamamlanan odak süresi. [presetId] null ise mod bilinmiyor (modlardan önceki kayıtlar). */
+data class ModeFocus(
+    val presetId: Long?,
     val focusMs: Long,
     val sessions: Int,
 )
@@ -31,6 +31,6 @@ data class WeeklyStats(
     val topDistractors: List<Distractor>,
     /** Bugün dahil son 7 takvim günü, eskiden yeniye; seans olmayan gün 0 ms ile yer alır. */
     val dailyFocus: List<DayFocus> = emptyList(),
-    /** Etikete göre kırılım, süreye göre azalan; etiketsizler en sonda. Hiç etiket kullanılmadıysa boş. */
-    val labelBreakdown: List<LabelFocus> = emptyList(),
+    /** Moda göre kırılım, süreye göre azalan; modu bilinmeyenler en sonda. Tek mod kullanıldıysa boş. */
+    val modeBreakdown: List<ModeFocus> = emptyList(),
 )

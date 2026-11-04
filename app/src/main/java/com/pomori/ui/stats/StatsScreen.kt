@@ -44,7 +44,6 @@ import com.pomori.R
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
 import com.pomori.domain.model.GoalProgress
-import com.pomori.domain.model.LabelFocus
 import com.pomori.ui.components.EmptyState
 import com.pomori.ui.components.InitialAvatar
 import com.pomori.ui.components.ScreenHeader
@@ -138,11 +137,11 @@ private fun StatsContent(state: StatsUiState) {
                 )
             }
         }
-        if (state.labelBreakdown.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.stats_labels_title), Modifier.padding(start = 0.dp)) }
-            itemsIndexed(state.labelBreakdown, key = { _, it -> it.label ?: "" }) { index, entry ->
-                LabelRow(entry, maxMs = state.maxLabelFocusMs)
-                if (index != state.labelBreakdown.lastIndex) {
+        if (state.modeBreakdown.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.stats_modes_title), Modifier.padding(start = 0.dp)) }
+            itemsIndexed(state.modeBreakdown, key = { _, it -> it.name ?: "" }) { index, entry ->
+                ModeRow(entry, maxMs = state.maxModeFocusMs)
+                if (index != state.modeBreakdown.lastIndex) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -343,14 +342,14 @@ private fun GoalCard(goal: GoalProgress) {
 }
 
 @Composable
-private fun LabelRow(entry: LabelFocus, maxMs: Long) {
-    val name = entry.label ?: stringResource(R.string.stats_label_none)
+private fun ModeRow(entry: ModeStat, maxMs: Long) {
+    val name = entry.name ?: stringResource(R.string.stats_mode_other)
     val duration = durationText(entry.focusMs)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 14.dp)
-            .testTag("stats_label_${entry.label ?: "none"}")
+            .testTag("stats_mode_${entry.name ?: "other"}")
             .clearAndSetSemantics { contentDescription = "$name, $duration" },
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

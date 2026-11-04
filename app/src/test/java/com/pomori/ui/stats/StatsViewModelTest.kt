@@ -2,7 +2,10 @@ package com.pomori.ui.stats
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.pomori.data.repository.PresetRepositoryImpl
 import com.pomori.domain.model.CapturedNotification
+import com.pomori.domain.model.Preset
+import com.pomori.testutil.FakePresetDao
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.model.SessionStatus
 import com.pomori.domain.model.SessionType
@@ -33,6 +36,7 @@ class StatsViewModelTest {
     private val now = 100 * day
     private val sessions = FakeSessionRepository()
     private val notifications = FakeNotificationRepository()
+    private val presets = PresetRepositoryImpl(FakePresetDao())
 
     @Before
     fun setUp() {
@@ -47,6 +51,7 @@ class StatsViewModelTest {
     private fun viewModel() = StatsViewModel(
         GetWeeklyStats(sessions, notifications, FakeClock(nowMs = now)),
         GetGoalProgress(sessions, FakeSettingsStore(), FakeClock(nowMs = now)),
+        presets,
     )
 
     private suspend fun completedFocus(minutes: Long) {
@@ -87,6 +92,30 @@ class StatsViewModelTest {
 
         assertTrue(initial.isLoading)
         assertFalse(initial.isEmpty)
+    }
+
+    @Test
+    fun `the breakdown names modes and merges unknown ones into other`() = runTest {
+        val study = presets.add(Preset(name = "Ders", focusMinutes = 40, breakMinutes = 5, longBreakMinutes = 15))
+        val code = presets.add(Preset(name = "Kod", focusMinutes = 25, breakMinutes = 5, longBreakMinutes = 15))
+        fun add(presetId: Long?, minutes: Long) = FocusSession(
+            type = SessionType.FOCUS,
+            startedAt = now - day,
+            plannedDurationMs = minutes * minute,
+            endedAt = now - day + minutes * minute,
+            status = SessionStatus.COMPLETED,
+            presetId = presetId,
+        )
+        sessions.insert(add(study, 40))
+        sessions.insert(add(code, 60))
+        sessions.insert(add(null, 10))
+        sessions.insert(add(999, 5)) // silinmiş mod
+
+        viewModel().uiState.test {
+            val state = awaitLoaded()
+            assertEquals(listOf<String?>("Kod", "Ders", null), state.modeBreakdown.map { it.name })
+            assertEquals(15 * minute, state.modeBreakdown.last().focusMs)
+        }
     }
 
     @Test

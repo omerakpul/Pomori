@@ -33,7 +33,7 @@ class GetWeeklyStats @Inject constructor(
                 completedSessions = completed.size,
                 topDistractors = distractors,
                 dailyFocus = dailyFocus(completed, now, zone, DAYS),
-                labelBreakdown = labelBreakdown(completed),
+                modeBreakdown = modeBreakdown(completed),
             )
         }
     }

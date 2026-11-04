@@ -18,18 +18,6 @@ interface SessionDao {
     @Query("UPDATE focus_sessions SET interruptions = interruptions + 1 WHERE id = :id AND status = 'RUNNING'")
     suspend fun incrementInterruptions(id: Long): Int
 
-    /** Son kullanılan etiketler (büyük/küçük harf ayırmadan tekil), en yeniden eskiye. */
-    @Query(
-        """
-        SELECT label FROM focus_sessions
-        WHERE label IS NOT NULL
-        GROUP BY LOWER(label)
-        ORDER BY MAX(startedAt) DESC
-        LIMIT :limit
-        """,
-    )
-    fun observeRecentLabels(limit: Int): Flow<List<String>>
-
     @Query("SELECT interruptions FROM focus_sessions WHERE id = :id")
     fun observeInterruptions(id: Long): Flow<Int?>
 

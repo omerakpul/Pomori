@@ -11,9 +11,6 @@ interface SessionRepository {
     suspend fun recordInterruption(id: Long): Boolean
     /** Seansın kesinti sayısını canlı izler (seans yoksa 0). */
     fun observeInterruptions(id: Long): Flow<Int>
-    /** Önceki seanslarda kullanılan etiketler, en son kullanılan başta; öneri çipleri için. */
-    fun observeRecentLabels(limit: Int): Flow<List<String>>
-
     suspend fun getById(id: Long): FocusSession?
 
     /** `from`'dan (epoch ms) beri başlamış, tamamlanan odak seansları; yeniden eskiye sıralı. */

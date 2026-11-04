@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pomori.domain.Clock
 import com.pomori.domain.model.ActiveSession
-import com.pomori.domain.model.MAX_LABEL_LENGTH
 import com.pomori.domain.model.SessionType
 import com.pomori.domain.repository.ActiveSessionStore
 import com.pomori.domain.repository.PresetRepository
@@ -83,18 +82,6 @@ class TimerViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TimerUiState())
 
-    /** Sonraki seansa yazılacak etiket taslağı. Seans başlayınca korunur: aynı işe arka arkaya odaklanmak sık görülür. */
-    private val _label = MutableStateFlow("")
-    val label: StateFlow<String> = _label
-
-    /** Önceki seanslardan öneri olarak sunulan etiketler. */
-    val recentLabels: StateFlow<List<String>> = sessions.observeRecentLabels(RECENT_LABELS)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
-
-    fun setLabel(value: String) {
-        _label.value = value.take(MAX_LABEL_LENGTH)
-    }
-
     private val shownDigestSessionId = MutableStateFlow<Long?>(null)
 
     /**
@@ -148,7 +135,7 @@ class TimerViewModel @Inject constructor(
     // (bitiş zamanı başlangıçta DataStore'a yazılır). Seans, çalıştığı modun id'sini taşır.
     fun startFocus() = launch {
         val preset = observeSelectedPreset().filterNotNull().first()
-        startSession(SessionType.FOCUS, preset.focusMinutes * MS_PER_MINUTE, presetId = preset.id, label = _label.value)
+        startSession(SessionType.FOCUS, preset.focusMinutes * MS_PER_MINUTE, presetId = preset.id)
     }
 
     /**
@@ -187,6 +174,5 @@ class TimerViewModel @Inject constructor(
         const val TICK_MS = 250L
         const val MS_PER_MINUTE = 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
-        const val RECENT_LABELS = 6
     }
 }

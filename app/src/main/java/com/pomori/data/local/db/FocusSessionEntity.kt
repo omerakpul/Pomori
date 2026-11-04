@@ -17,5 +17,6 @@ data class FocusSessionEntity(
     val status: SessionStatus,
     val presetId: Long? = null,
     @ColumnInfo(defaultValue = "0") val interruptions: Int = 0,
+    /** Kullanılmıyor: etiket özelliği kaldırıldı (mod adı etiket görevi görür). Sütun v6 şemasıyla uyumlu kalsın diye duruyor. */
     val label: String? = null,
 )

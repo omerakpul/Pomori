@@ -3,7 +3,13 @@ package com.pomori.ui.stats
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
 import com.pomori.domain.model.GoalProgress
-import com.pomori.domain.model.LabelFocus
+
+/** Kırılımdaki bir satır. [name] null ise mod bilinmiyor (silinmiş ya da modlardan önceki kayıt): "Diğer". */
+data class ModeStat(
+    val name: String?,
+    val focusMs: Long,
+    val sessions: Int,
+)
 
 data class StatsUiState(
     /** İlk veri gelene kadar true; ekran bu sürede "veri yok" durumunu göstermemelidir. */
@@ -14,8 +20,8 @@ data class StatsUiState(
     val topDistractors: List<Distractor> = emptyList(),
     /** Bugün dahil son 7 gün, eskiden yeniye. */
     val dailyFocus: List<DayFocus> = emptyList(),
-    /** Etikete göre kırılım; hiç etiket yoksa boş ve bölüm gizlenir. */
-    val labelBreakdown: List<LabelFocus> = emptyList(),
+    /** Moda göre kırılım; tek mod kullanıldıysa boş ve bölüm gizlenir. */
+    val modeBreakdown: List<ModeStat> = emptyList(),
     /** Günlük hedef ve seri; hedef kapalıysa kart gösterilmez. */
     val goal: GoalProgress = GoalProgress(),
 ) {
@@ -32,7 +38,7 @@ data class StatsUiState(
     val focusHours: Int get() = (totalFocusMs / MS_PER_HOUR).toInt()
     val focusMinutes: Int get() = ((totalFocusMs / MS_PER_MINUTE) % 60).toInt()
 
-    val maxLabelFocusMs: Long get() = labelBreakdown.maxOfOrNull { it.focusMs } ?: 0L
+    val maxModeFocusMs: Long get() = modeBreakdown.maxOfOrNull { it.focusMs } ?: 0L
 
     /** Çubukların oranı için en kalabalık uygulamanın bildirim sayısı. */
     val maxDistractorCount: Int get() = topDistractors.maxOfOrNull { it.count } ?: 0

@@ -20,8 +20,6 @@ class SessionRepositoryImpl @Inject constructor(
 
     override fun observeInterruptions(id: Long): Flow<Int> = dao.observeInterruptions(id).map { it ?: 0 }
 
-    override fun observeRecentLabels(limit: Int): Flow<List<String>> = dao.observeRecentLabels(limit)
-
     override suspend fun getById(id: Long): FocusSession? = dao.getById(id)?.toDomain()
 
     override fun observeCompletedFocusSince(from: Long): Flow<List<FocusSession>> =
@@ -37,7 +35,6 @@ internal fun FocusSession.toEntity() = FocusSessionEntity(
     status = status,
     presetId = presetId,
     interruptions = interruptions,
-    label = label,
 )
 
 internal fun FocusSessionEntity.toDomain() = FocusSession(
@@ -49,5 +46,4 @@ internal fun FocusSessionEntity.toDomain() = FocusSession(
     status = status,
     presetId = presetId,
     interruptions = interruptions,
-    label = label,
 )

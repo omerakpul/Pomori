@@ -13,12 +13,6 @@
     <string name="action_start_focus">Odağı başlat</string>
     <string name="action_cancel">İptal</string>
     <string name="action_interrupt">Kesinti</string>
-    <string name="label_add">+ Etiket</string>
-    <string name="label_clear">Etiketi kaldır</string>
-    <string name="label_dialog_title">Seans etiketi</string>
-    <string name="label_placeholder">Ör. Ders, Kod, Okuma</string>
-    <string name="label_save">Tamam</string>
-    <string name="label_cancel">Vazgeç</string>
     <string name="stats_goal_title">Günlük hedef</string>
     <string name="stats_goal_progress">%1$s / %2$s</string>
     <string name="stats_goal_reached">Bugünün hedefi tamam</string>
@@ -35,8 +29,8 @@
     <string name="settings_goal_off">Kapalı</string>
     <string name="settings_goal_minutes">%d dk</string>
     <string name="settings_goal_hint">Günde bu kadar odak süresine ulaşırsan gün hedefi tutturulmuş sayılır. Art arda tutturulan günler seriyi oluşturur; bugün henüz bitmediyse seri bozulmaz.</string>
-    <string name="stats_labels_title">Etikete göre</string>
-    <string name="stats_label_none">Etiketsiz</string>
+    <string name="stats_modes_title">Moda göre</string>
+    <string name="stats_mode_other">Diğer</string>
     <string name="action_interrupt_count">Kesinti (%d)</string>
     <string name="action_start_break">Molayı başlat</string>
     <string name="action_start_long_break">Uzun molayı başlat</string>
