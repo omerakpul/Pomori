@@ -1,12 +1,15 @@
 package com.pomori.testutil
 
 import com.pomori.domain.model.ActiveSession
+import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.NotificationRepository
 import com.pomori.domain.repository.SessionRepository
 import com.pomori.domain.repository.SettingsStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class FakeSessionRepository : SessionRepository {
     val rows = linkedMapOf<Long, FocusSession>()
@@ -47,4 +50,22 @@ class FakeSettingsStore(initialOnboardingDone: Boolean = false) : SettingsStore 
     override suspend fun setOnboardingDone() {
         done.value = true
     }
+}
+
+class FakeNotificationRepository : NotificationRepository {
+    private val state = MutableStateFlow<List<CapturedNotification>>(emptyList())
+    val rows: List<CapturedNotification> get() = state.value
+
+    /** Doluysa bir sonraki insert bu istisnayı fırlatır (disk dolu, FK ihlali vb. simülasyonu). */
+    var failWith: Exception? = null
+
+    override suspend fun insert(notification: CapturedNotification): Long {
+        failWith?.let { throw it }
+        val id = rows.size + 1L
+        state.value = rows + notification.copy(id = id)
+        return id
+    }
+
+    override fun observeBySession(sessionId: Long): Flow<List<CapturedNotification>> =
+        state.map { all -> all.filter { it.sessionId == sessionId }.sortedByDescending { it.postedAt } }
 }
