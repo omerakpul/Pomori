@@ -2,14 +2,17 @@ package com.pomori.domain.usecase
 
 import com.pomori.domain.Clock
 import com.pomori.domain.digest.IgnoreReason
+import com.pomori.domain.digest.ExceptionMatcher
 import com.pomori.domain.digest.IncomingNotification
 import com.pomori.domain.digest.NotificationFilter
 import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.ExceptionRepository
 import com.pomori.domain.repository.NotificationRepository
 import com.pomori.domain.timer.TimerState
 import com.pomori.domain.timer.toTimerState
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 
 sealed interface CaptureResult {
     /** Bildirim kaydedildi; çağıran taraf onu sistemden kaldırabilir. */
@@ -23,13 +26,15 @@ sealed interface CaptureResult {
 }
 
 /**
- * Odak seansı sürerken gelen bildirimi özet için kaydeder. Bildirimi sistemden kaldırma
- * kararı çağırana kalır: yalnızca [CaptureResult.Captured] dönerse kaldırılmalıdır.
- * Kayıt başarısız olursa istisna fırlar ve bildirim yerinde kalır, yani veri kaybolmaz.
+ * Odak seansı sürerken gelen bildirimi özet için kaydeder, ama istisna listesindekilere dokunmaz.
+ * Bildirimi sistemden kaldırma kararı çağırana kalır: yalnızca [CaptureResult.Captured] dönerse
+ * kaldırılmalıdır. Kayıt ya da kural okuması başarısız olursa istisna fırlar ve bildirim yerinde
+ * kalır: emin olunamadığında bildirim yakalanmaz, veri ya da bildirim kaybolmaz.
  */
 class CaptureNotification @Inject constructor(
     private val activeStore: ActiveSessionStore,
     private val notifications: NotificationRepository,
+    private val exceptions: ExceptionRepository,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(incoming: IncomingNotification): CaptureResult {
@@ -38,6 +43,13 @@ class CaptureNotification @Inject constructor(
         if (active.toTimerState(now) !is TimerState.Focus) return CaptureResult.NoActiveFocus
 
         NotificationFilter.ignoreReason(incoming)?.let { return CaptureResult.Ignored(it) }
+
+        // Kurallar her bildirimde yeniden okunur: ayarlardan eklenen istisna bir sonraki bildirimden
+        // itibaren geçerli olur. Okunamazsa istisna fırlar ve bildirime dokunulmaz.
+        val rules = exceptions.observeAll().first()
+        if (ExceptionMatcher.isExcepted(incoming.packageName, incoming.title, rules)) {
+            return CaptureResult.Ignored(IgnoreReason.EXCEPTED)
+        }
 
         val id = notifications.insert(
             CapturedNotification(

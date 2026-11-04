@@ -19,7 +19,14 @@ data class IncomingNotification(
     val isOwnApp: Boolean,
 )
 
-enum class IgnoreReason { ONGOING, GROUP_SUMMARY, OWN_APP }
+enum class IgnoreReason {
+    ONGOING,
+    GROUP_SUMMARY,
+    OWN_APP,
+
+    /** Kullanıcının istisna listesine takıldı: olduğu gibi gelmeye devam eder. */
+    EXCEPTED,
+}
 
 object NotificationFilter {
 

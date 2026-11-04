@@ -81,11 +81,15 @@ class FakeSettingsStore(
     }
 }
 
-class FakeExceptionRepository : ExceptionRepository {
-    private val state = MutableStateFlow<List<ExceptionRule>>(emptyList())
+class FakeExceptionRepository(initial: List<ExceptionRule> = emptyList()) : ExceptionRepository {
+    private val state = MutableStateFlow(initial)
     val rules: List<ExceptionRule> get() = state.value
 
-    override fun observeAll(): Flow<List<ExceptionRule>> = state
+    /** Doluysa kurallar okunurken bu istisna fırlar (veritabanı hatası simülasyonu). */
+    var readFailure: Exception? = null
+
+    override fun observeAll(): Flow<List<ExceptionRule>> =
+        state.map { rules -> readFailure?.let { throw it } ?: rules }
 
     override suspend fun add(rule: ExceptionRule): Boolean {
         val normalized = when (rule) {

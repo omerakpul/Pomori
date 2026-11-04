@@ -3,9 +3,11 @@ package com.pomori.domain.usecase
 import com.pomori.domain.digest.IgnoreReason
 import com.pomori.domain.digest.IncomingNotification
 import com.pomori.domain.model.ActiveSession
+import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.SessionType
 import com.pomori.testutil.FakeActiveSessionStore
 import com.pomori.testutil.FakeClock
+import com.pomori.testutil.FakeExceptionRepository
 import com.pomori.testutil.FakeNotificationRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -25,8 +27,10 @@ class CaptureNotificationTest {
         plannedDurationMs = 60_000,
     )
 
+    private val exceptions = FakeExceptionRepository()
+
     private fun useCase(active: ActiveSession?) =
-        CaptureNotification(FakeActiveSessionStore(active), repo, clock)
+        CaptureNotification(FakeActiveSessionStore(active), repo, exceptions, clock)
 
     private fun incoming(
         isOngoing: Boolean = false,
@@ -109,6 +113,94 @@ class CaptureNotificationTest {
     @Test
     fun `when saving fails the exception reaches the caller so the notification stays`() = runTest {
         repo.failWith = IllegalStateException("disk full")
+
+        val failure = runCatching { useCase(focusSession())(incoming()) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalStateException)
+        assertTrue(repo.rows.isEmpty())
+    }
+
+    // --- istisna kuralları ---
+
+    @Test
+    fun `a notification from an excepted package is left alone`() = runTest {
+        exceptions.add(ExceptionRule.Package("com.whatsapp"))
+
+        val result = useCase(focusSession())(incoming())
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.EXCEPTED), result)
+        assertTrue(repo.rows.isEmpty())
+    }
+
+    @Test
+    fun `a notification from an excepted sender is left alone`() = runTest {
+        exceptions.add(ExceptionRule.Sender("Ayşe"))
+
+        val result = useCase(focusSession())(incoming())
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.EXCEPTED), result)
+        assertTrue(repo.rows.isEmpty())
+    }
+
+    @Test
+    fun `rules that do not match do not stop the capture`() = runTest {
+        exceptions.add(ExceptionRule.Package("com.bank"))
+        exceptions.add(ExceptionRule.Sender("Patron"))
+
+        val result = useCase(focusSession())(incoming())
+
+        assertTrue(result is CaptureResult.Captured)
+        assertEquals(1, repo.rows.size)
+    }
+
+    @Test
+    fun `a rule added during the session applies to the next notification`() = runTest {
+        val useCase = useCase(focusSession())
+        assertTrue(useCase(incoming()) is CaptureResult.Captured)
+
+        exceptions.add(ExceptionRule.Package("com.whatsapp"))
+
+        assertEquals(CaptureResult.Ignored(IgnoreReason.EXCEPTED), useCase(incoming()))
+        assertEquals(1, repo.rows.size)
+    }
+
+    @Test
+    fun `a removed rule stops excepting the notification`() = runTest {
+        exceptions.add(ExceptionRule.Package("com.whatsapp"))
+        val useCase = useCase(focusSession())
+        assertEquals(CaptureResult.Ignored(IgnoreReason.EXCEPTED), useCase(incoming()))
+
+        exceptions.remove(ExceptionRule.Package("com.whatsapp"))
+
+        assertTrue(useCase(incoming()) is CaptureResult.Captured)
+    }
+
+    @Test
+    fun `outside a focus session the rules are not even consulted`() = runTest {
+        exceptions.readFailure = IllegalStateException("would crash if read")
+
+        val result = useCase(active = null)(incoming())
+
+        assertEquals(CaptureResult.NoActiveFocus, result)
+    }
+
+    @Test
+    fun `our own and ongoing notifications are ignored for their own reason first`() = runTest {
+        exceptions.add(ExceptionRule.Package("com.whatsapp"))
+
+        assertEquals(
+            CaptureResult.Ignored(IgnoreReason.OWN_APP),
+            useCase(focusSession())(incoming(isOwnApp = true)),
+        )
+        assertEquals(
+            CaptureResult.Ignored(IgnoreReason.ONGOING),
+            useCase(focusSession())(incoming(isOngoing = true)),
+        )
+    }
+
+    @Test
+    fun `when the rules cannot be read nothing is stored and the exception reaches the caller`() = runTest {
+        exceptions.readFailure = IllegalStateException("db unavailable")
 
         val failure = runCatching { useCase(focusSession())(incoming()) }.exceptionOrNull()
 

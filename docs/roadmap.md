@@ -46,7 +46,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 
 - [x] `ExceptionRuleEntity`, DAO, `ExceptionMatcher` + unit testler
 - [x] Ayarlar ekranı: süreler, istisna listesi (yüklü uygulamalardan seçme), saklama süresi
-- [ ] Listener'a istisna kontrolünü bağla
+- [x] Listener'a istisna kontrolünü bağla
 - [ ] `StatsScreen`: haftalık odak süresi, tamamlanan seans, en çok dikkat dağıtan uygulamalar
 - [ ] WorkManager ile eski bildirimleri silme işi (periyodik)
 - [ ] Compose UI testleri (sayaç ve özet ekranları)
