@@ -6,7 +6,7 @@
 | Alan | Tür | Not |
 |---|---|---|
 | id | Long (PK, autoGenerate) | |
-| type | String (FOCUS / BREAK) | TypeConverter ile enum |
+| type | String (FOCUS / BREAK) | Room 2.3+ enum'u adıyla saklar, TypeConverter gerekmez |
 | startedAt | Long | epoch ms |
 | plannedDurationMs | Long | |
 | endedAt | Long? | Bitmediyse null |
@@ -133,6 +133,7 @@ interface ExceptionDao {
 | active_session_id | Long | -1 = yok |
 | active_end_at | Long | Bitiş zamanı epoch ms |
 | active_type | String | FOCUS / BREAK |
+| active_planned_ms | Long | Planlanan süre (ilerleme halkası için; Hafta 1'de eklendi) |
 
 ## Saf iş mantığı sınıfları
 
