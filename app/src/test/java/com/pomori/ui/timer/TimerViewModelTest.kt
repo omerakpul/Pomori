@@ -9,6 +9,7 @@ import com.pomori.testutil.FakeClock
 import com.pomori.testutil.FakeSessionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -132,6 +133,99 @@ class TimerViewModelTest {
             vm.cancelFocus()
 
             assertEquals(TimerPhase.IDLE, awaitItem().phase)
+        }
+    }
+
+    // --- Seans bitince bir kerelik özet yönlendirmesi ---
+
+    private fun TestScope.finishFocus() {
+        clock.advanceBy(TimerDefaults.FOCUS_MS)
+        testScheduler.advanceTimeBy(500)
+        testScheduler.runCurrent()
+    }
+
+    @Test
+    fun `no digest is suggested while idle or focusing`() = runTest {
+        val vm = viewModel()
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+
+            vm.startFocus()
+            testScheduler.runCurrent()
+
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `when focus ends the digest of that session is suggested`() = runTest {
+        val vm = viewModel()
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+            vm.startFocus()
+            testScheduler.runCurrent()
+            val sessionId = repo.rows.keys.single()
+
+            finishFocus()
+
+            assertEquals(sessionId, awaitItem())
+        }
+    }
+
+    @Test
+    fun `after the digest was shown it is not suggested again`() = runTest {
+        val vm = viewModel()
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+            vm.startFocus()
+            testScheduler.runCurrent()
+            finishFocus()
+            val sessionId = awaitItem()!!
+
+            vm.onDigestShown(sessionId)
+
+            assertEquals(null, awaitItem())
+        }
+        // Ekran yeniden oluşunca (aynı ViewModel) mola hâlâ bekliyor ama özet tekrar önerilmez.
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `the next focus session suggests its own digest again`() = runTest {
+        val vm = viewModel()
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+            vm.startFocus()
+            testScheduler.runCurrent()
+            finishFocus()
+            vm.onDigestShown(awaitItem()!!)
+            assertEquals(null, awaitItem())
+
+            vm.skipBreak()
+            vm.startFocus()
+            testScheduler.runCurrent()
+            finishFocus()
+
+            assertEquals(repo.rows.keys.max(), awaitItem())
+        }
+    }
+
+    @Test
+    fun `skipping the break pending state withdraws the suggestion`() = runTest {
+        val vm = viewModel()
+        vm.pendingDigestSessionId.test {
+            assertEquals(null, awaitItem())
+            vm.startFocus()
+            testScheduler.runCurrent()
+            finishFocus()
+            awaitItem() // öneri geldi, henüz gösterilmedi
+
+            vm.skipBreak()
+
+            assertEquals(null, awaitItem())
         }
     }
 }

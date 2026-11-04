@@ -42,11 +42,21 @@ import com.pomori.ui.theme.PomoriTheme
 /** ViewModel'e, izin isteme akışına ve servis başlatmaya bağlanan giriş noktası. */
 @Composable
 fun TimerRoute(
+    onOpenDigest: (sessionId: Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val pendingDigest by viewModel.pendingDigestSessionId.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // Odak bitince o seansın özetine git; ViewModel aynı seans için yalnızca bir kez önerir.
+    LaunchedEffect(pendingDigest) {
+        pendingDigest?.let { sessionId ->
+            viewModel.onDigestShown(sessionId)
+            onOpenDigest(sessionId)
+        }
+    }
 
     // İzin verilse de verilmese de seans başlar: reddedilirse uygulama bozulmaz,
     // yalnızca sistem bildirimi görünmez (sayaç uygulama içinde çalışmaya devam eder).

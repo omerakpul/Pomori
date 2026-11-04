@@ -30,6 +30,7 @@
     <string name="digest_state_expanded">Açık</string>
     <string name="digest_state_collapsed">Kapalı</string>
     <string name="digest_item_untitled">Başlıksız bildirim</string>
+    <string name="digest_continue">Devam</string>
 
     <string name="channel_timer_name">Sayaç</string>
     <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>

@@ -9,11 +9,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.platform.permission.NotificationListenerAccess
 import com.pomori.ui.onboarding.OnboardingScreen
 import com.pomori.ui.onboarding.OnboardingViewModel
-import com.pomori.ui.timer.TimerRoute
+import com.pomori.ui.navigation.PomoriNavHost
 
 /**
- * Uygulamanın kök ekranı: onboarding tamamlanmadıysa onu, tamamlandıysa sayacı gösterir.
- * Birden çok ekran olunca (özet, ayarlar) bu yer NavHost'a dönüşecek.
+ * Uygulamanın kök ekranı: onboarding tamamlanmadıysa onu, tamamlandıysa ana ekranları
+ * ([PomoriNavHost]: sayaç ve bildirim özeti) gösterir.
  */
 @Composable
 fun PomoriRoot(
@@ -34,6 +34,6 @@ fun PomoriRoot(
             onSkip = viewModel::complete,
             modifier = modifier,
         )
-        true -> TimerRoute(modifier = modifier)
+        true -> PomoriNavHost(modifier = modifier)
     }
 }

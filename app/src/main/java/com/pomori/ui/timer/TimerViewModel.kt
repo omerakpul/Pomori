@@ -17,8 +17,10 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -27,7 +29,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class TimerViewModel @Inject constructor(
     private val clock: Clock,
-    activeSessionStore: ActiveSessionStore,
+    private val activeSessionStore: ActiveSessionStore,
     private val startSession: StartSession,
     private val endSession: EndSession,
 ) : ViewModel() {
@@ -40,6 +42,24 @@ class TimerViewModel @Inject constructor(
     val uiState: StateFlow<TimerUiState> = activeSessionStore.active
         .flatMapLatest { active -> ticking(active) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TimerUiState())
+
+    private val shownDigestSessionId = MutableStateFlow<Long?>(null)
+
+    /**
+     * Odak seansı bitip mola beklemeye geçince, o seansın özetini göstermek için bir kez yayınlanır.
+     * [onDigestShown] çağrılınca (ya da ekran yeniden oluşunca bile) aynı seans için tekrar yayınlanmaz;
+     * kullanıcı özeti kapatıp mola beklerken ekran onu tekrar açmaya zorlanmaz.
+     */
+    val pendingDigestSessionId: StateFlow<Long?> =
+        combine(uiState, activeSessionStore.active, shownDigestSessionId) { ui, active, shown ->
+            val sessionId = active?.sessionId
+            if (ui.phase == TimerPhase.BREAK_PENDING && sessionId != null && sessionId != shown) sessionId else null
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+    /** Özet ekranı açıldı; aynı seans için tekrar önerme. */
+    fun onDigestShown(sessionId: Long) {
+        shownDigestSessionId.value = sessionId
+    }
 
     private fun ticking(active: ActiveSession?): Flow<TimerUiState> = flow {
         var settled = false

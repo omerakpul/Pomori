@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,24 +51,46 @@ import java.time.format.FormatStyle
 /** ViewModel'e bağlanan giriş noktası. Seans kimliği navigasyon argümanından gelir. */
 @Composable
 fun DigestRoute(
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DigestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    DigestScreen(state = state, onToggleApp = viewModel::toggleExpanded, modifier = modifier)
+    DigestScreen(
+        state = state,
+        onToggleApp = viewModel::toggleExpanded,
+        onClose = onClose,
+        modifier = modifier,
+    )
 }
 
 @Composable
 fun DigestScreen(
     state: DigestUiState,
     onToggleApp: (String) -> Unit,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when {
-        // İlk veri gelene kadar hiçbir şey çizme: boş durum yanıp sönmesin.
-        state.isLoading -> Box(modifier.fillMaxSize())
-        state.isEmpty -> EmptyDigest(modifier)
-        else -> DigestList(state, onToggleApp, modifier)
+    Column(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                // İlk veri gelene kadar hiçbir şey çizme: boş durum yanıp sönmesin.
+                state.isLoading -> Unit
+                state.isEmpty -> EmptyDigest()
+                else -> DigestList(state, onToggleApp)
+            }
+        }
+        if (!state.isLoading) {
+            Button(
+                onClick = onClose,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .testTag("digest_continue"),
+            ) {
+                Text(stringResource(R.string.digest_continue))
+            }
+        }
     }
 }
 
@@ -260,6 +283,7 @@ private fun DigestScreenPreview() {
                 expanded = setOf("com.whatsapp"),
             ),
             onToggleApp = {},
+            onClose = {},
         )
     }
 }
@@ -267,5 +291,5 @@ private fun DigestScreenPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun EmptyDigestPreview() {
-    PomoriTheme { DigestScreen(state = DigestUiState(isLoading = false), onToggleApp = {}) }
+    PomoriTheme { DigestScreen(state = DigestUiState(isLoading = false), onToggleApp = {}, onClose = {}) }
 }
