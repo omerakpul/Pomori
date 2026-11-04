@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
         ExceptionRuleEntity::class,
         PresetEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

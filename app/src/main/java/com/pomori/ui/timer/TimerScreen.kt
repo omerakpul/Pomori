@@ -121,6 +121,7 @@ fun TimerRoute(
             }
         },
         onCancelFocus = viewModel::cancelFocus,
+        onInterrupt = viewModel::interrupt,
         onStartBreak = viewModel::startBreak,
         onSkipBreak = viewModel::skipBreak,
         notificationAccessGranted = accessGranted,
@@ -141,6 +142,7 @@ fun TimerScreen(
     onStartBreak: () -> Unit,
     onSkipBreak: () -> Unit,
     modifier: Modifier = Modifier,
+    onInterrupt: () -> Unit = {},
     notificationAccessGranted: Boolean = true,
     onOpenNotificationAccess: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -275,6 +277,8 @@ fun TimerScreen(
                     onCancelFocus = onCancelFocus,
                     onStartBreak = onStartBreak,
                     onSkipBreak = onSkipBreak,
+                    interruptions = state.interruptions,
+                    onInterrupt = onInterrupt,
                 )
                 Spacer(Modifier.height(20.dp))
 
@@ -375,6 +379,8 @@ private fun TimerActions(
     onCancelFocus: () -> Unit,
     onStartBreak: () -> Unit,
     onSkipBreak: () -> Unit,
+    interruptions: Int = 0,
+    onInterrupt: () -> Unit = {},
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when (phase) {
@@ -388,15 +394,28 @@ private fun TimerActions(
                 onAccent = onAccent,
             )
 
-            TimerPhase.FOCUS -> RoundAction(
-                icon = R.drawable.ic_stop,
-                label = stringResource(R.string.action_cancel),
-                onClick = onCancelFocus,
-                tag = TAG_CANCEL,
-                filled = false,
-                accent = accent,
-                onAccent = onAccent,
-            )
+            TimerPhase.FOCUS -> {
+                RoundAction(
+                    icon = R.drawable.ic_stop,
+                    label = stringResource(R.string.action_cancel),
+                    onClick = onCancelFocus,
+                    tag = TAG_CANCEL,
+                    filled = false,
+                    accent = accent,
+                    onAccent = onAccent,
+                )
+                // Süre durmaz: kullanıcı dikkatinin dağıldığını kendisi işaretler, seans kaydına sayı olarak yazılır.
+                TextButton(onClick = onInterrupt, modifier = Modifier.testTag(TAG_INTERRUPT)) {
+                    Text(
+                        text = if (interruptions > 0) {
+                            stringResource(R.string.action_interrupt_count, interruptions)
+                        } else {
+                            stringResource(R.string.action_interrupt)
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             TimerPhase.BREAK_PENDING -> {
                 RoundAction(
@@ -588,6 +607,7 @@ const val TAG_PHASE = "timer_phase"
 const val TAG_TIME = "timer_time"
 const val TAG_START_FOCUS = "timer_start_focus"
 const val TAG_CANCEL = "timer_cancel"
+const val TAG_INTERRUPT = "timer_interrupt"
 const val TAG_START_BREAK = "timer_start_break"
 const val TAG_SKIP = "timer_skip"
 const val TAG_SETTINGS = "timer_settings"

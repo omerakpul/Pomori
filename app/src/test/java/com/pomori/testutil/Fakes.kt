@@ -42,6 +42,15 @@ class FakeSessionRepository : SessionRepository {
 
     override suspend fun getById(id: Long): FocusSession? = rows[id]
 
+    override suspend fun recordInterruption(id: Long): Boolean {
+        val row = rows[id]?.takeIf { it.status == SessionStatus.RUNNING } ?: return false
+        rows[id] = row.copy(interruptions = row.interruptions + 1)
+        version.value++
+        return true
+    }
+
+    override fun observeInterruptions(id: Long): Flow<Int> = version.map { rows[id]?.interruptions ?: 0 }
+
     // Gerçek DAO sorgusuyla aynı koşullar: odak + tamamlandı + startedAt >= from, yeniden eskiye.
     override fun observeCompletedFocusSince(from: Long): Flow<List<FocusSession>> =
         version.map {

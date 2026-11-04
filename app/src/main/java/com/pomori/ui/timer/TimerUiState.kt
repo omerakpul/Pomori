@@ -22,6 +22,8 @@ data class TimerUiState(
     /** Seçilebilir modlar (oluşturulma sırasıyla). Henüz yüklenmediyse boş. */
     val presets: List<Preset> = emptyList(),
     val selectedPresetId: Long? = null,
+    /** Çalışan odak seansındaki kesinti sayısı. */
+    val interruptions: Int = 0,
 ) {
     /** Döngü noktalarında kaç tanesi dolu gösterilir: uzun mola hak edilmişken (ya da sürerken) hepsi dolu. */
     val cycleFilled: Int

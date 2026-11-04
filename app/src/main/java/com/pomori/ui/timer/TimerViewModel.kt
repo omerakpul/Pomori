@@ -7,6 +7,7 @@ import com.pomori.domain.model.ActiveSession
 import com.pomori.domain.model.SessionType
 import com.pomori.domain.repository.ActiveSessionStore
 import com.pomori.domain.repository.PresetRepository
+import com.pomori.domain.repository.SessionRepository
 import com.pomori.domain.repository.SettingsStore
 import com.pomori.domain.timer.TimerDefaults
 import com.pomori.domain.timer.TimerState
@@ -16,6 +17,7 @@ import com.pomori.domain.usecase.EndSession
 import com.pomori.domain.usecase.GetBreakPlan
 import com.pomori.domain.usecase.GetDigest
 import com.pomori.domain.usecase.ObserveSelectedPreset
+import com.pomori.domain.usecase.RecordInterruption
 import com.pomori.domain.usecase.StartSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,6 +46,8 @@ class TimerViewModel @Inject constructor(
     private val getBreakPlan: GetBreakPlan,
     private val getDigest: GetDigest,
     private val observeSelectedPreset: ObserveSelectedPreset,
+    private val recordInterruption: RecordInterruption,
+    sessions: SessionRepository,
     presets: PresetRepository,
 ) : ViewModel() {
 
@@ -56,12 +61,16 @@ class TimerViewModel @Inject constructor(
         observeSelectedPreset(),
         presets.observeAll(),
         getBreakPlan(),
-    ) { ticking, selected, all, plan ->
+        activeSessionStore.active.flatMapLatest { a ->
+            if (a == null) flowOf(0) else sessions.observeInterruptions(a.sessionId)
+        },
+    ) { ticking, selected, all, plan, interruptions ->
         val state = ticking.copy(
             cycleDone = plan.focusDoneInCycle,
             cycleLength = plan.cycleLength,
             presets = all,
             selectedPresetId = selected?.id,
+            interruptions = interruptions,
         )
         when (state.phase) {
             // Boştayken, başlatılınca çalışacak süreyi (seçili modun odak süresini) göster.
@@ -151,6 +160,9 @@ class TimerViewModel @Inject constructor(
             cancelledDigestSessionId.value = sessionId
         }
     }
+
+    /** Süre durmaz; yalnızca çalışan odak seansının sayacını artırır. */
+    fun interrupt() = launch { recordInterruption() }
 
     fun skipBreak() = launch { endSession(EndReason.SKIP) }
 

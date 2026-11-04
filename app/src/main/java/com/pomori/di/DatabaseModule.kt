@@ -7,6 +7,7 @@ import com.pomori.data.local.db.ExceptionDao
 import com.pomori.data.local.db.MIGRATION_1_2
 import com.pomori.data.local.db.MIGRATION_2_3
 import com.pomori.data.local.db.MIGRATION_3_4
+import com.pomori.data.local.db.MIGRATION_4_5
 import com.pomori.data.local.db.NotificationDao
 import com.pomori.data.local.db.PresetDao
 import com.pomori.data.local.db.SessionDao
@@ -25,7 +26,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "pomori.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides

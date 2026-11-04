@@ -6,6 +6,7 @@ import com.pomori.data.repository.toEntity
 import com.pomori.domain.model.Preset
 import com.pomori.domain.timer.TimerDefaults
 import com.pomori.domain.usecase.ObserveSelectedPreset
+import com.pomori.domain.usecase.RecordInterruption
 import com.pomori.domain.usecase.EndSession
 import com.pomori.domain.usecase.GetDigest
 import com.pomori.domain.usecase.GetBreakPlan
@@ -71,7 +72,7 @@ class TimerViewModelTest {
         val selected = ObserveSelectedPreset(repository, settings)
         return TimerViewModel(
             clock, store, startSession, endSession, settings, GetBreakPlan(repo, selected, clock),
-            GetDigest(notifications), selected, repository,
+            GetDigest(notifications), selected, RecordInterruption(repo, store), repo, repository,
         )
     }
 
@@ -82,6 +83,22 @@ class TimerViewModelTest {
             assertEquals(TimerPhase.IDLE, state.phase)
             assertEquals(TimerDefaults.FOCUS_MS, state.remainingMs)
             assertEquals(1f, state.progress, 0.0001f)
+        }
+    }
+
+    @Test
+    fun `interrupt counts without stopping the timer`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            awaitItem()
+            vm.startFocus()
+            var state = awaitItem()
+            while (state.phase != TimerPhase.FOCUS) state = awaitItem()
+            vm.interrupt()
+            while (state.interruptions < 1) state = awaitItem()
+            assertEquals(TimerPhase.FOCUS, state.phase)
+            assertEquals(1, state.interruptions)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 

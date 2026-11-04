@@ -13,6 +13,8 @@ data class FocusSession(
     val status: SessionStatus,
     /** Seansın çalıştığı mod. Mod eklenmeden önceki kayıtlarda yoktur (null). */
     val presetId: Long? = null,
+    /** Seans sırasında kullanıcının bastığı "kesinti" sayısı. Süre durmaz. */
+    val interruptions: Int = 0,
 )
 
 /**

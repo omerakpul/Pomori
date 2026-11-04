@@ -1,5 +1,6 @@
 package com.pomori.data.local.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.pomori.domain.model.SessionStatus
@@ -15,4 +16,5 @@ data class FocusSessionEntity(
     val endedAt: Long?,
     val status: SessionStatus,
     val presetId: Long? = null,
+    @ColumnInfo(defaultValue = "0") val interruptions: Int = 0,
 )
