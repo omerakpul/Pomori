@@ -21,3 +21,7 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Yerel senkron betiği
+git-sync.bat
+git-sync.log
