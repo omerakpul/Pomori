@@ -14,6 +14,18 @@
     <string name="action_cancel">İptal</string>
     <string name="action_interrupt">Kesinti</string>
     <string name="label_field">Etiket (isteğe bağlı)</string>
+    <string name="stats_goal_title">Günlük hedef</string>
+    <string name="stats_goal_progress">%1$s / %2$s</string>
+    <string name="stats_goal_reached">Bugünün hedefi tamam</string>
+    <plurals name="stats_streak_days">
+        <item quantity="one">%d günlük seri</item>
+        <item quantity="other">%d günlük seri</item>
+    </plurals>
+    <string name="settings_section_goal">Günlük hedef</string>
+    <string name="settings_goal">Odak hedefi</string>
+    <string name="settings_goal_off">Kapalı</string>
+    <string name="settings_goal_minutes">%d dk</string>
+    <string name="settings_goal_hint">Günde bu kadar odak süresine ulaşırsan gün hedefi tutturulmuş sayılır. Art arda tutturulan günler seriyi oluşturur; bugün henüz bitmediyse seri bozulmaz.</string>
     <string name="stats_labels_title">Etikete göre</string>
     <string name="stats_label_none">Etiketsiz</string>
     <string name="action_interrupt_count">Kesinti (%d)</string>

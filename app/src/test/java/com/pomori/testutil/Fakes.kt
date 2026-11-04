@@ -82,7 +82,9 @@ class FakeSettingsStore(
     selectedPresetId: Long? = null,
     restoreNotifications: Boolean = true,
     retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
+    dailyGoalMinutes: Int = SettingsDefaults.DAILY_GOAL_MINUTES,
 ) : SettingsStore {
+    private val dailyGoal = MutableStateFlow(dailyGoalMinutes)
     private val done = MutableStateFlow(initialOnboardingDone)
     private val focus = MutableStateFlow(focusMinutes)
     private val breakTime = MutableStateFlow(breakMinutes)
@@ -98,6 +100,11 @@ class FakeSettingsStore(
     override val selectedPresetId: Flow<Long?> = selectedPreset
     override val restoreNotifications: Flow<Boolean> = restore
     override val retentionDays: Flow<Int> = retention
+    override val dailyGoalMinutes: Flow<Int> = dailyGoal
+
+    override suspend fun setDailyGoalMinutes(minutes: Int) {
+        dailyGoal.value = minutes.coerceIn(SettingsDefaults.DAILY_GOAL_RANGE)
+    }
 
     override suspend fun setOnboardingDone() {
         done.value = true

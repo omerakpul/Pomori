@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+private data class GeneralSettings(val retentionDays: Int, val restore: Boolean, val dailyGoalMinutes: Int)
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
@@ -37,9 +39,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     /** `combine` türlü en fazla 5 akış alır; sayısal ve açık/kapalı ayarları bir çifte toplarız. */
-    private val general = combine(settings.retentionDays, settings.restoreNotifications) { days, restore ->
-        days to restore
-    }
+    private val general = combine(
+        settings.retentionDays,
+        settings.restoreNotifications,
+        settings.dailyGoalMinutes,
+    ) { days, restore, goal -> GeneralSettings(days, restore, goal) }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         presets.observeAll(),
@@ -47,18 +51,21 @@ class SettingsViewModel @Inject constructor(
         general,
         exceptions.observeAll(),
         installed,
-    ) { allPresets, selected, (retention, restore), rules, apps ->
+    ) { allPresets, selected, general, rules, apps ->
         val labels = apps.associate { it.packageName to it.label }
         val excepted = rules.filterIsInstance<ExceptionRule.Package>().map { it.value }.toSet()
         SettingsUiState(
             presetCount = allPresets.size,
             selectedPresetName = selected?.name,
-            retentionDays = retention,
-            restoreNotifications = restore,
+            retentionDays = general.retentionDays,
+            restoreNotifications = general.restore,
+            dailyGoalMinutes = general.dailyGoalMinutes,
             rules = rules.map { RuleItem(it, displayName(it, labels)) },
             selectableApps = apps.filter { it.packageName !in excepted },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SettingsUiState())
+
+    fun setDailyGoalMinutes(minutes: Int) = launch { settings.setDailyGoalMinutes(minutes) }
 
     fun setRestoreNotifications(enabled: Boolean) = launch { settings.setRestoreNotifications(enabled) }
 

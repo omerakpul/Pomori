@@ -6,7 +6,9 @@ import com.pomori.domain.model.CapturedNotification
 import com.pomori.domain.model.FocusSession
 import com.pomori.domain.model.SessionStatus
 import com.pomori.domain.model.SessionType
+import com.pomori.domain.usecase.GetGoalProgress
 import com.pomori.domain.usecase.GetWeeklyStats
+import com.pomori.testutil.FakeSettingsStore
 import com.pomori.testutil.FakeClock
 import com.pomori.testutil.FakeNotificationRepository
 import com.pomori.testutil.FakeSessionRepository
@@ -42,7 +44,10 @@ class StatsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = StatsViewModel(GetWeeklyStats(sessions, notifications, FakeClock(nowMs = now)))
+    private fun viewModel() = StatsViewModel(
+        GetWeeklyStats(sessions, notifications, FakeClock(nowMs = now)),
+        GetGoalProgress(sessions, FakeSettingsStore(), FakeClock(nowMs = now)),
+    )
 
     private suspend fun completedFocus(minutes: Long) {
         sessions.insert(

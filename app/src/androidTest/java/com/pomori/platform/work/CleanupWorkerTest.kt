@@ -62,6 +62,8 @@ class CleanupWorkerTest {
         override val selectedPresetId: Flow<Long?> = flowOf(null)
         override val restoreNotifications: Flow<Boolean> = flowOf(true)
         override val retentionDays: Flow<Int> = flowOf(days)
+        override val dailyGoalMinutes: Flow<Int> = flowOf(0)
+        override suspend fun setDailyGoalMinutes(minutes: Int) = Unit
         override suspend fun setOnboardingDone() = Unit
         override suspend fun setFocusMinutes(minutes: Int) = Unit
         override suspend fun setBreakMinutes(minutes: Int) = Unit

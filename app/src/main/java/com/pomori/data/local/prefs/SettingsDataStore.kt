@@ -41,6 +41,9 @@ class SettingsDataStore @Inject constructor(
     override val retentionDays: Flow<Int> =
         intSetting(KEY_RETENTION_DAYS, SettingsDefaults.RETENTION_DAYS, SettingsDefaults.RETENTION_RANGE)
 
+    override val dailyGoalMinutes: Flow<Int> =
+        intSetting(KEY_DAILY_GOAL, SettingsDefaults.DAILY_GOAL_MINUTES, SettingsDefaults.DAILY_GOAL_RANGE)
+
     override suspend fun setOnboardingDone() {
         dataStore.edit { it[KEY_ONBOARDING_DONE] = true }
     }
@@ -65,6 +68,9 @@ class SettingsDataStore @Inject constructor(
     override suspend fun setRetentionDays(days: Int) =
         write(KEY_RETENTION_DAYS, days, SettingsDefaults.RETENTION_RANGE)
 
+    override suspend fun setDailyGoalMinutes(minutes: Int) =
+        write(KEY_DAILY_GOAL, minutes, SettingsDefaults.DAILY_GOAL_RANGE)
+
     /** Eksikse varsayılan, aralık dışıysa en yakın sınır: akış her zaman geçerli bir değer verir. */
     private fun intSetting(key: Preferences.Key<Int>, default: Int, range: IntRange): Flow<Int> =
         dataStore.data.map { (it[key] ?: default).coerceIn(range) }.distinctUntilChanged()
@@ -81,5 +87,6 @@ class SettingsDataStore @Inject constructor(
         val KEY_RESTORE_NOTIFICATIONS = booleanPreferencesKey("restore_notifications")
         val KEY_SELECTED_PRESET = longPreferencesKey("selected_preset_id")
         val KEY_RETENTION_DAYS = intPreferencesKey("retention_days")
+        val KEY_DAILY_GOAL = intPreferencesKey("daily_goal_minutes")
     }
 }

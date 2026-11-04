@@ -10,11 +10,16 @@ object SettingsDefaults {
     const val LONG_BREAK_EVERY = 4
     const val RETENTION_DAYS = 7
 
+    /** 0 = günlük hedef kapalı. */
+    const val DAILY_GOAL_MINUTES = 0
+
     val FOCUS_RANGE = 1..120
     val BREAK_RANGE = 1..60
     val LONG_BREAK_RANGE = 1..120
     val LONG_BREAK_EVERY_RANGE = 2..8
     val RETENTION_RANGE = 1..30
+    val DAILY_GOAL_RANGE = 0..720
+    const val DAILY_GOAL_STEP = 5
 }
 
 /** Seçilebilir bir uygulama (istisna listesi için yüklü uygulamalardan seçerken). */

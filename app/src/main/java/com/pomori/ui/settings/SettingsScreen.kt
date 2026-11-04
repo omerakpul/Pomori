@@ -75,6 +75,7 @@ fun SettingsRoute(
         state = state,
         onOpenPresets = onOpenPresets,
         onRetentionDaysChange = viewModel::setRetentionDays,
+        onDailyGoalChange = viewModel::setDailyGoalMinutes,
         onRestoreNotificationsChange = viewModel::setRestoreNotifications,
         onAddSender = viewModel::addSender,
         onAddApp = viewModel::addApp,
@@ -95,6 +96,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onOpenPresets: () -> Unit = {},
     onRestoreNotificationsChange: (Boolean) -> Unit = {},
+    onDailyGoalChange: (Int) -> Unit = {},
 ) {
     var showAppPicker by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
@@ -184,6 +186,35 @@ fun SettingsScreen(
                         )
                     }
                     Switch(checked = state.restoreNotifications, onCheckedChange = null)
+                }
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.settings_section_goal), Modifier.padding(horizontal = 16.dp)) }
+        item {
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Column(Modifier.padding(vertical = 4.dp)) {
+                    StepperRow(
+                        icon = R.drawable.ic_schedule,
+                        tint = scheme.primary,
+                        label = stringResource(R.string.settings_goal),
+                        valueText = if (state.dailyGoalMinutes == 0) {
+                            stringResource(R.string.settings_goal_off)
+                        } else {
+                            stringResource(R.string.settings_goal_minutes, state.dailyGoalMinutes)
+                        },
+                        canDecrement = state.dailyGoalMinutes > SettingsDefaults.DAILY_GOAL_RANGE.first,
+                        canIncrement = state.dailyGoalMinutes < SettingsDefaults.DAILY_GOAL_RANGE.last,
+                        onDecrement = { onDailyGoalChange(state.dailyGoalMinutes - SettingsDefaults.DAILY_GOAL_STEP) },
+                        onIncrement = { onDailyGoalChange(state.dailyGoalMinutes + SettingsDefaults.DAILY_GOAL_STEP) },
+                        tag = "settings_goal",
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_goal_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                    )
                 }
             }
         }

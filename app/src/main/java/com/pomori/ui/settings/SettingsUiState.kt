@@ -15,6 +15,8 @@ data class SettingsUiState(
     val presetCount: Int = 0,
     val selectedPresetName: String? = null,
     val retentionDays: Int = SettingsDefaults.RETENTION_DAYS,
+    /** Günlük odak hedefi, dakika; 0 = kapalı. */
+    val dailyGoalMinutes: Int = SettingsDefaults.DAILY_GOAL_MINUTES,
     /** Yakalanan bildirimler seans bitince panele geri getirilsin mi? */
     val restoreNotifications: Boolean = true,
     /** Eklenme sırasıyla. */

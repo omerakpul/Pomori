@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pomori.R
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
+import com.pomori.domain.model.GoalProgress
 import com.pomori.domain.model.LabelFocus
 import com.pomori.ui.components.EmptyState
 import com.pomori.ui.components.InitialAvatar
@@ -122,6 +124,9 @@ private fun StatsContent(state: StatsUiState) {
                 color = MaterialTheme.colorScheme.outlineVariant,
                 modifier = Modifier.padding(top = 24.dp),
             )
+        }
+        if (state.goal.enabled) {
+            item { GoalCard(state.goal) }
         }
         if (state.hasChart) {
             item { SectionHeader(stringResource(R.string.stats_chart_title)) }
@@ -277,6 +282,63 @@ private fun BigStat(value: String, label: String, valueTag: String, accent: Bool
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun GoalCard(goal: GoalProgress) {
+    val today = durationText(goal.todayMs)
+    val target = durationText(goal.goalMs)
+    val streakText = if (goal.streak > 0) pluralStringResource(R.plurals.stats_streak_days, goal.streak, goal.streak) else null
+    val progressText = stringResource(R.string.stats_goal_progress, today, target)
+    val description = listOfNotNull(
+        stringResource(R.string.stats_goal_title),
+        progressText,
+        if (goal.reached) stringResource(R.string.stats_goal_reached) else null,
+        streakText,
+    ).joinToString(". ")
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp)
+            .testTag("stats_goal")
+            .clearAndSetSemantics { contentDescription = description },
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.stats_goal_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            if (streakText != null) {
+                Text(
+                    text = streakText,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("stats_streak"),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(50)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction = goal.fraction)
+                    .height(8.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50)),
+            )
+        }
+        Text(
+            text = if (goal.reached) stringResource(R.string.stats_goal_reached) else progressText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(top = 12.dp))
     }
 }
 

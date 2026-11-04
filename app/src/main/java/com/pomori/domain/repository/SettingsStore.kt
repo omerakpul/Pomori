@@ -27,6 +27,9 @@ interface SettingsStore {
     /** Yakalanan bildirimlerin kaç gün saklanacağı. */
     val retentionDays: Flow<Int>
 
+    /** Günlük odak hedefi, dakika. 0 = hedef kapalı. */
+    val dailyGoalMinutes: Flow<Int>
+
     suspend fun setOnboardingDone()
 
     suspend fun setFocusMinutes(minutes: Int)
@@ -40,4 +43,6 @@ interface SettingsStore {
     suspend fun setSelectedPresetId(id: Long)
 
     suspend fun setRetentionDays(days: Int)
+
+    suspend fun setDailyGoalMinutes(minutes: Int)
 }

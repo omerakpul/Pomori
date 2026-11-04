@@ -2,6 +2,7 @@ package com.pomori.ui.stats
 
 import com.pomori.domain.model.DayFocus
 import com.pomori.domain.model.Distractor
+import com.pomori.domain.model.GoalProgress
 import com.pomori.domain.model.LabelFocus
 
 data class StatsUiState(
@@ -15,6 +16,8 @@ data class StatsUiState(
     val dailyFocus: List<DayFocus> = emptyList(),
     /** Etikete göre kırılım; hiç etiket yoksa boş ve bölüm gizlenir. */
     val labelBreakdown: List<LabelFocus> = emptyList(),
+    /** Günlük hedef ve seri; hedef kapalıysa kart gösterilmez. */
+    val goal: GoalProgress = GoalProgress(),
 ) {
     /** Grafik, en az bir günde odak süresi varken anlamlıdır; hepsi sıfırsa boş bir şablon göstermeyiz. */
     val hasChart: Boolean get() = dailyFocus.any { it.focusMs > 0 }
