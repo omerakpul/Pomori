@@ -33,7 +33,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 - [x] Bildirim erişim iznini kontrol eden yardımcı ve ayarlara yönlendirme
 - [x] `CapturedNotificationEntity`, DAO, repository
 - [x] `FocusNotificationListener`: filtreleme (ongoing, grup özeti, kendi uygulaması), kaydetme, `cancelNotification`
-- [ ] `NotificationGrouper` + unit testler
+- [x] `NotificationGrouper` + unit testler
 - [ ] `GetDigest` use case, `DigestViewModel`
 - [ ] `DigestScreen`: uygulama bazlı genişleyen liste, boş durum ekranı
 - [ ] Seans bitişinde özet ekranına yönlendirme
