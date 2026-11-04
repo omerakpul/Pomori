@@ -31,7 +31,7 @@ Tahmini süre: yaklaşık 3 hafta (günde 2-3 saat). Her adım küçük ve ayrı
 
 - [x] Onboarding ekranı: neden bildirim erişimi istiyoruz, hangi veriyi saklıyoruz
 - [x] Bildirim erişim iznini kontrol eden yardımcı ve ayarlara yönlendirme
-- [ ] `CapturedNotificationEntity`, DAO, repository
+- [x] `CapturedNotificationEntity`, DAO, repository
 - [ ] `FocusNotificationListener`: filtreleme (ongoing, grup özeti, kendi uygulaması), kaydetme, `cancelNotification`
 - [ ] `NotificationGrouper` + unit testler
 - [ ] `GetDigest` use case, `DigestViewModel`

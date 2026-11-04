@@ -37,6 +37,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // MigrationTestHelper, eski sürüm şemalarını (schemas/.../N.json) test varlıklarından okur.
+    sourceSets {
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    }
 }
 
 // Room şema dosyalarını repoya yazar (migration testleri için)
@@ -84,4 +88,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // MigrationTestHelper (room-testing 2.8.5) kotlinx-serialization 1.8.x ile derlendi; AGP test sınıf yolunu
+    // uygulamanın çalışma zamanı sürümüne kilitlediği için burada yükseltmezsek 1.7.3 kalır ve
+    // AbstractMethodError ile düşer. Constraint yeni bağımlılık eklemez, yalnızca sürümü yükseltir.
+    constraints {
+        implementation(libs.kotlinx.serialization.core)
+    }
 }
