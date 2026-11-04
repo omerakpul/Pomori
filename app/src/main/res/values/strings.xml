@@ -1,3 +1,28 @@
 <resources>
     <string name="app_name">Pomori</string>
+
+    <string name="phase_idle">Odaklanmaya hazır</string>
+    <string name="phase_focus">Odak</string>
+    <string name="phase_break_pending">Odak tamamlandı</string>
+    <string name="phase_break">Mola</string>
+    <string name="time_break_pending">Mola zamanı</string>
+    <string name="timer_content_description">%1$s, %2$s</string>
+
+    <string name="action_start_focus">Odağı başlat</string>
+    <string name="action_cancel">İptal</string>
+    <string name="action_start_break">Molayı başlat</string>
+    <string name="action_skip_break">Molayı atla</string>
+
+    <string name="channel_timer_name">Sayaç</string>
+    <string name="channel_timer_description">Seans sürerken kalan süreyi gösterir</string>
+    <string name="channel_alerts_name">Seans bitişi</string>
+    <string name="channel_alerts_description">Odak ya da mola bittiğinde uyarır</string>
+
+    <string name="notification_focus_title">Odak seansı sürüyor</string>
+    <string name="notification_break_title">Mola sürüyor</string>
+    <string name="notification_running_text">Kalan süre</string>
+    <string name="notification_focus_done_title">Odak tamamlandı</string>
+    <string name="notification_focus_done_text">Güzel iş! Molayı başlatmak için dokun.</string>
+    <string name="notification_break_done_title">Mola bitti</string>
+    <string name="notification_break_done_text">Yeni bir odak seansına hazır olunca dokun.</string>
 </resources>
