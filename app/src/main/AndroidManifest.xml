@@ -6,6 +6,17 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
+    <!--
+        Android 11+ paket görünürlüğü: özetteki uygulama adlarını (WhatsApp, Gmail...) çözebilmek için
+        launcher'da görünen uygulamalar sorgulanabilir. QUERY_ALL_PACKAGES'tan çok daha dar bir kapsamdır.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".PomoriApp"
         android:allowBackup="false"
@@ -36,6 +47,17 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Pomodoro focus timer: keeps the countdown alive and shows the remaining session time in an ongoing notification while the user focuses." />
+        </service>
+
+        <!-- Seans sırasında bildirimleri yakalar. Kullanıcı erişimi sistem ayarlarından kendisi açar. -->
+        <service
+            android:name=".platform.notification.FocusNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
     </application>
 
