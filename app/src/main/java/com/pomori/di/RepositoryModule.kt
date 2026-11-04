@@ -2,8 +2,10 @@ package com.pomori.di
 
 import com.pomori.data.local.prefs.ActiveSessionDataStore
 import com.pomori.data.local.prefs.SettingsDataStore
+import com.pomori.data.repository.NotificationRepositoryImpl
 import com.pomori.data.repository.SessionRepositoryImpl
 import com.pomori.domain.repository.ActiveSessionStore
+import com.pomori.domain.repository.NotificationRepository
 import com.pomori.domain.repository.SessionRepository
 import com.pomori.domain.repository.SettingsStore
 import dagger.Binds
@@ -20,6 +22,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindActiveSessionStore(impl: ActiveSessionDataStore): ActiveSessionStore
+
+    @Binds
+    abstract fun bindNotificationRepository(impl: NotificationRepositoryImpl): NotificationRepository
 
     @Binds
     abstract fun bindSettingsStore(impl: SettingsDataStore): SettingsStore
