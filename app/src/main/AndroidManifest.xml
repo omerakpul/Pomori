@@ -7,6 +7,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!--
+        Seans bitiş alarmı. Android 13+ (API 33) zamanlayıcı uygulamalarına USE_EXACT_ALARM'ı otomatik verir;
+        12 ve 12L'de SCHEDULE_EXACT_ALARM kurulumla gelir.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+
+    <!--
         Android 11+ paket görünürlüğü: özetteki uygulama adlarını (WhatsApp, Gmail...) çözebilmek için
         launcher'da görünen uygulamalar sorgulanabilir. QUERY_ALL_PACKAGES'tan çok daha dar bir kapsamdır.
     -->
@@ -48,6 +57,10 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Pomodoro focus timer: keeps the countdown alive and shows the remaining session time in an ongoing notification while the user focuses." />
         </service>
+
+        <receiver
+            android:name=".platform.service.SessionEndReceiver"
+            android:exported="false" />
 
         <!--
             WorkManager'ı Hilt'in worker fabrikasıyla PomoriApp başlatır (Configuration.Provider);

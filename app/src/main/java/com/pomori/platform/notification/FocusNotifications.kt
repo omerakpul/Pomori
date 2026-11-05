@@ -12,6 +12,7 @@ import com.pomori.domain.model.SessionType
 
 /** Servisin kullandığı bildirimleri üretir. İş mantığı içermez. */
 object FocusNotifications {
+    private const val NO_SESSION = -1L
     const val ONGOING_ID = 1
     const val ALERT_ID = 2
 
@@ -55,6 +56,16 @@ object FocusNotifications {
         R.string.notification_break_done_title,
         R.string.notification_break_done_text,
     )
+
+    private val lastAlertedSession = java.util.concurrent.atomic.AtomicLong(NO_SESSION)
+
+    /**
+     * Seans bitiş bildirimini gönderir; aynı seans için ikinci çağrı (servis ve alarm alıcısı yarışırsa) hiçbir şey
+     * yapmaz. Kullanıcı ilk bildirimi kapattıysa geç gelen ikincisi onu geri getirmesin.
+     */
+    fun alertOnce(context: Context, sessionId: Long, notification: Notification) {
+        if (lastAlertedSession.getAndSet(sessionId) != sessionId) notifyAlert(context, notification)
+    }
 
     fun notifyAlert(context: Context, notification: Notification) {
         context.getSystemService(NotificationManager::class.java).notify(ALERT_ID, notification)

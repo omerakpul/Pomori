@@ -63,27 +63,31 @@ class FocusForegroundService : Service() {
             when (val state = active.toTimerState(now)) {
                 is TimerState.Focus -> {
                     show(FocusNotifications.running(this, active!!.type, state.endAt))
+                    SessionEndAlarm.schedule(this, state.endAt)
                     delay((state.endAt - now).coerceAtLeast(0))
                     endSession(EndReason.TIME_UP)
-                    FocusNotifications.notifyAlert(this, FocusNotifications.focusDone(this))
+                    FocusNotifications.alertOnce(this, active.sessionId, FocusNotifications.focusDone(this))
                     finish()
                 }
 
                 is TimerState.Break -> {
                     show(FocusNotifications.running(this, active!!.type, state.endAt, state.isLong))
+                    SessionEndAlarm.schedule(this, state.endAt)
                     delay((state.endAt - now).coerceAtLeast(0))
                     endSession(EndReason.TIME_UP)
-                    FocusNotifications.notifyAlert(this, FocusNotifications.breakDone(this))
+                    FocusNotifications.alertOnce(this, active.sessionId, FocusNotifications.breakDone(this))
                     finish()
                 }
 
                 // Servis yeniden başlatıldığında süre zaten dolmuş olabilir: kaydı kapat, sustur.
                 TimerState.BreakPending -> {
+                    SessionEndAlarm.cancel(this)
                     endSession(EndReason.TIME_UP)
                     finish()
                 }
 
                 TimerState.Idle -> {
+                    SessionEndAlarm.cancel(this)
                     if (active != null) endSession(EndReason.TIME_UP)
                     finish()
                 }
