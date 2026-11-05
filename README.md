@@ -8,18 +8,23 @@ An Android Pomodoro timer that silently captures notifications during a focus se
 Every notification that lands while you are trying to focus breaks your attention, but turning notifications off completely creates the worry of missing something important. Pomori captures incoming notifications quietly during a focus session and removes them from the shade, so you can keep working. When the break starts, everything you missed appears in a single digest grouped by app. Apps that must always get through can be added to an exception list so their notifications are never blocked.
 
 ## Features
-- Focus and break timer with short and long breaks, driven by an end timestamp so it survives process death
+- Focus and break timer with short and long breaks, driven by an end timestamp so it survives process death; an exact alarm fires the "session over" notification on time even while the phone is locked
 - Duration presets (modes) with their own focus, break and long-break lengths
 - Notification digest grouped by app, with notifications restored to the shade after the session (optional)
 - Exception list by app or sender
-- Interruption counter: tap "Kesinti" during a focus session to log a distraction; the timer keeps running
-- Optional session label, with a per-label breakdown in the stats
+- Interruption counter: tap "Interruption" during a focus session to log a distraction; the timer keeps running
 - Daily focus goal with a streak counter
-- Weekly stats: focus time, completed sessions, daily chart, top distracting apps
-- Dark theme and accessibility support
+- Statistics: weekly focus time, completed sessions, daily chart, focus time per mode, top distracting apps
+- English and Turkish UI with an in-app language setting; light, dark or system theme
+- Portrait and landscape layouts
 
 ## Screenshots
-_(To be added)_
+<p>
+  <img src="docs/screenshots/timer.png" width="22%" alt="Timer with duration modes">
+  <img src="docs/screenshots/focus.png" width="22%" alt="Running focus session with the interruption counter">
+  <img src="docs/screenshots/digest.png" width="22%" alt="Notification digest grouped by app">
+  <img src="docs/screenshots/stats.png" width="22%" alt="Statistics with daily goal, streak and per-mode breakdown">
+</p>
 
 ## Architecture
 Layered structure: **ui → domain ← data**, with Android-specific code in the `platform` package. Details: [docs/architecture.md](docs/architecture.md) (in Turkish)
