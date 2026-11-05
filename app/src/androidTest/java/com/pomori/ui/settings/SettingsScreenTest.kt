@@ -74,6 +74,7 @@ class SettingsScreenTest {
     @Test
     fun showsTheCurrentRetention() {
         show(SettingsUiState(retentionDays = 14))
+        scrollTo("settings_retention_inc")
 
         rule.onNodeWithTag("settings_retention_value").assertTextEquals(rule.str(R.string.settings_days_format, 14))
     }
@@ -81,6 +82,7 @@ class SettingsScreenTest {
     @Test
     fun retention_changesInStepsOfOneDay() {
         show(SettingsUiState(retentionDays = 7))
+        scrollTo("settings_retention_inc")
 
         rule.onNodeWithTag("settings_retention_inc").performClick()
         rule.onNodeWithTag("settings_retention_dec").performClick()
@@ -91,6 +93,7 @@ class SettingsScreenTest {
     @Test
     fun theLowerLimit_disablesTheDecreaseButton() {
         show(SettingsUiState(retentionDays = 1))
+        scrollTo("settings_retention_inc")
 
         rule.onNodeWithTag("settings_retention_dec").assertIsNotEnabled()
         rule.onNodeWithTag("settings_retention_inc").assertIsEnabled()
@@ -99,6 +102,7 @@ class SettingsScreenTest {
     @Test
     fun theUpperLimit_disablesTheIncreaseButton() {
         show(SettingsUiState(retentionDays = 30))
+        scrollTo("settings_retention_inc")
 
         rule.onNodeWithTag("settings_retention_inc").assertIsNotEnabled()
         rule.onNodeWithTag("settings_retention_dec").assertIsEnabled()
@@ -107,6 +111,7 @@ class SettingsScreenTest {
     @Test
     fun aDisabledButton_doesNotReportAChange() {
         show(SettingsUiState(retentionDays = 1))
+        scrollTo("settings_retention_inc")
 
         rule.onNodeWithTag("settings_retention_dec").performClick()
 
@@ -275,6 +280,7 @@ class SettingsScreenTest {
         show()
 
         listOf("retention").forEach { row ->
+            scrollTo("settings_${row}_inc")
             listOf("dec", "inc").forEach { direction ->
                 rule.onNodeWithTag("settings_${row}_$direction")
                     .assertWidthIsAtLeast(48.dp)
