@@ -162,6 +162,7 @@ class SettingsScreenTest {
             ),
         )
 
+        scrollTo("settings_remove_Anne")
         rule.onNodeWithText("WhatsApp").assertIsDisplayed()
         rule.onNodeWithText(rule.str(R.string.settings_rule_type_app)).assertIsDisplayed()
         rule.onNodeWithText("Anne").assertIsDisplayed()
@@ -173,6 +174,7 @@ class SettingsScreenTest {
     fun removeButton_reportsTheRuleToRemove() {
         show(SettingsUiState(rules = listOf(RuleItem(ExceptionRule.Sender("Anne"), "Anne"))))
 
+        scrollTo("settings_remove_Anne")
         rule.onNodeWithTag("settings_remove_Anne").performClick()
 
         assertEquals(listOf("remove:Anne"), calls)
