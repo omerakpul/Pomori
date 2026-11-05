@@ -9,6 +9,7 @@ import com.pomori.domain.timer.TimerState
 import com.pomori.domain.timer.toTimerState
 import com.pomori.domain.usecase.EndReason
 import com.pomori.domain.usecase.EndSession
+import com.pomori.platform.locale.AppLocale
 import com.pomori.platform.notification.FocusNotifications
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -27,7 +28,8 @@ class SessionEndReceiver : BroadcastReceiver() {
     @Inject lateinit var endSession: EndSession
     @Inject lateinit var clock: Clock
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(base: Context, intent: Intent) {
+        val context = AppLocale.wrap(base)
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {

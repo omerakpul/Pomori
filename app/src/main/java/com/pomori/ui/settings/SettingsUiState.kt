@@ -1,5 +1,6 @@
 package com.pomori.ui.settings
 
+import com.pomori.domain.model.AppLanguage
 import com.pomori.domain.model.ExceptionRule
 import com.pomori.domain.model.InstalledApp
 import com.pomori.domain.model.SettingsDefaults
@@ -19,6 +20,7 @@ data class SettingsUiState(
     /** Günlük odak hedefi, dakika; 0 = kapalı. */
     val dailyGoalMinutes: Int = SettingsDefaults.DAILY_GOAL_MINUTES,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val language: AppLanguage = AppLanguage.SYSTEM,
     /** Yakalanan bildirimler seans bitince panele geri getirilsin mi? */
     val restoreNotifications: Boolean = true,
     /** Eklenme sırasıyla. */

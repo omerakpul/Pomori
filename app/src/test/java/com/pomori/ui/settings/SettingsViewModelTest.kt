@@ -62,6 +62,7 @@ class SettingsViewModelTest {
             store,
             exceptions,
             CleanupOldNotifications(store, notifications, clock),
+            io.mockk.mockk(relaxed = true),
             apps,
             presets,
             ObserveSelectedPreset(presets, store),

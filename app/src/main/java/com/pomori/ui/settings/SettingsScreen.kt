@@ -59,6 +59,7 @@ import com.pomori.ui.components.IconLabel
 import com.pomori.ui.components.InitialAvatar
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import com.pomori.domain.model.AppLanguage
 import com.pomori.domain.model.ThemeMode
 import com.pomori.ui.components.ScreenHeader
 import com.pomori.ui.components.SectionHeader
@@ -74,12 +75,20 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
     SettingsScreen(
         state = state,
         onOpenPresets = onOpenPresets,
         onRetentionDaysChange = viewModel::setRetentionDays,
         onDailyGoalChange = viewModel::setDailyGoalMinutes,
         onThemeModeChange = viewModel::setThemeMode,
+        onLanguageChange = { language ->
+            viewModel.setLanguage(language)
+            // Dil, Activity'nin bağlamına işlenir: ekranların yeni dille çizilmesi için yeniden oluşturulur.
+            var ctx = context
+            while (ctx is android.content.ContextWrapper && ctx !is android.app.Activity) ctx = ctx.baseContext
+            (ctx as? android.app.Activity)?.recreate()
+        },
         onRestoreNotificationsChange = viewModel::setRestoreNotifications,
         onAddSender = viewModel::addSender,
         onAddApp = viewModel::addApp,
@@ -102,6 +111,7 @@ fun SettingsScreen(
     onRestoreNotificationsChange: (Boolean) -> Unit = {},
     onDailyGoalChange: (Int) -> Unit = {},
     onThemeModeChange: (ThemeMode) -> Unit = {},
+    onLanguageChange: (AppLanguage) -> Unit = {},
 ) {
     var showAppPicker by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
@@ -223,6 +233,40 @@ fun SettingsScreen(
                                 selectedLabelColor = scheme.primary,
                             ),
                             modifier = Modifier.testTag("settings_theme_${mode.name.lowercase()}"),
+                        )
+                    }
+                }
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.settings_section_language), Modifier.padding(horizontal = 16.dp)) }
+        item {
+            SoftCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AppLanguage.entries.forEach { language ->
+                        FilterChip(
+                            selected = state.language == language,
+                            onClick = { onLanguageChange(language) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (language) {
+                                            AppLanguage.SYSTEM -> R.string.settings_language_system
+                                            AppLanguage.TURKISH -> R.string.settings_language_turkish
+                                            AppLanguage.ENGLISH -> R.string.settings_language_english
+                                        },
+                                    ),
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = scheme.primary.copy(alpha = 0.16f),
+                                selectedLabelColor = scheme.primary,
+                            ),
+                            modifier = Modifier.testTag("settings_language_${language.name.lowercase()}"),
                         )
                     }
                 }

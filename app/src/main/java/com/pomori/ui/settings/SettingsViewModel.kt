@@ -3,7 +3,11 @@ package com.pomori.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pomori.domain.model.ExceptionRule
+import android.content.Context
+import com.pomori.domain.model.AppLanguage
 import com.pomori.domain.model.InstalledApp
+import com.pomori.platform.locale.AppLocale
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.pomori.domain.model.ThemeMode
 import com.pomori.domain.repository.ExceptionRepository
 import com.pomori.domain.repository.InstalledApps
@@ -20,13 +24,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-private data class GeneralSettings(val retentionDays: Int, val restore: Boolean, val dailyGoalMinutes: Int, val themeMode: ThemeMode)
+private data class GeneralSettings(val retentionDays: Int, val restore: Boolean, val dailyGoalMinutes: Int, val themeMode: ThemeMode, val language: AppLanguage)
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val exceptions: ExceptionRepository,
     private val cleanupOldNotifications: CleanupOldNotifications,
+    @ApplicationContext private val appContext: Context,
     installedApps: InstalledApps,
     presets: PresetRepository,
     observeSelectedPreset: ObserveSelectedPreset,
@@ -39,13 +44,22 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { installed.value = installedApps.launchableApps() }
     }
 
+    /** Dil SharedPreferences'ta tutulur (bkz. [AppLocale]); ekranın durumu için akışa yansıtılır. */
+    private val language = MutableStateFlow(AppLocale.read(appContext))
+
+    fun setLanguage(value: AppLanguage) {
+        AppLocale.write(appContext, value)
+        language.value = value
+    }
+
     /** `combine` türlü en fazla 5 akış alır; sayısal ve açık/kapalı ayarları bir çifte toplarız. */
     private val general = combine(
         settings.retentionDays,
         settings.restoreNotifications,
         settings.dailyGoalMinutes,
         settings.themeMode,
-    ) { days, restore, goal, theme -> GeneralSettings(days, restore, goal, theme) }
+        language,
+    ) { days, restore, goal, theme, lang -> GeneralSettings(days, restore, goal, theme, lang) }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         presets.observeAll(),
@@ -63,6 +77,7 @@ class SettingsViewModel @Inject constructor(
             restoreNotifications = general.restore,
             dailyGoalMinutes = general.dailyGoalMinutes,
             themeMode = general.themeMode,
+            language = general.language,
             rules = rules.map { RuleItem(it, displayName(it, labels)) },
             selectableApps = apps.filter { it.packageName !in excepted },
         )

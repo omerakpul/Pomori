@@ -3,6 +3,7 @@ package com.pomori.platform.service
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import com.pomori.platform.locale.AppLocale
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -42,6 +43,10 @@ class FocusForegroundService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 

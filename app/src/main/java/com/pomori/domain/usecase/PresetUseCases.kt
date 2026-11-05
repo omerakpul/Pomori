@@ -18,11 +18,12 @@ class EnsureDefaultPreset @Inject constructor(
     private val presets: PresetRepository,
     private val settings: SettingsStore,
 ) {
-    suspend operator fun invoke() {
+    /** [defaultName] ilk açılıştaki dile göre ("Default" / "Varsayılan") çağıran tarafından verilir. */
+    suspend operator fun invoke(defaultName: String = Preset.DEFAULT_NAME) {
         if (presets.count() > 0) return
         val id = presets.add(
             Preset(
-                name = Preset.DEFAULT_NAME,
+                name = defaultName,
                 focusMinutes = settings.focusMinutes.first(),
                 breakMinutes = settings.breakMinutes.first(),
                 longBreakMinutes = settings.longBreakMinutes.first(),

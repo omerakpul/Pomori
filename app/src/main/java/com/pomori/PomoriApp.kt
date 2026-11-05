@@ -1,6 +1,8 @@
 package com.pomori
 
 import android.app.Application
+import android.content.Context
+import com.pomori.platform.locale.AppLocale
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.pomori.domain.usecase.EnsureDefaultPreset
@@ -26,11 +28,15 @@ class PomoriApp : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         NotificationChannels.create(this)
         CleanupScheduler.schedule(this)
         // İlk açılışta (ya da modlardan önceki bir sürümden güncellemede) "Varsayılan" modu eski süreleriyle oluştur.
-        appScope.launch { ensureDefaultPreset() }
+        appScope.launch { ensureDefaultPreset(getString(R.string.preset_default_name)) }
     }
 }
